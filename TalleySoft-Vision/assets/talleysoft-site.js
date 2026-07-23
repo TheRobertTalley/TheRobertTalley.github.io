@@ -19,7 +19,8 @@
   const layers = {
     nodes: new Map(),
     markers: new Map(),
-    routes: new Map()
+    routes: new Map(),
+    directions: new Map()
   };
 
   const state = {
@@ -50,6 +51,7 @@
     markerLabel: document.getElementById("marker-label"),
     markerLat: document.getElementById("marker-lat"),
     markerLon: document.getElementById("marker-lon"),
+    markerHeading: document.getElementById("marker-heading"),
     loadDemo: document.getElementById("load-demo")
   };
 
@@ -57,12 +59,22 @@
     headset: "#41f19b",
     target: "#ff4c4c",
     threat: "#ffd447",
+    gunshot: "#ff4c4c",
+    direction: "#41f19b",
     hold: "#ff4c4c",
     route: "#4ddfea",
     lz: "#ffd447",
     medical: "#e4fff3",
     location: "#41f19b"
   };
+
+  const defaultBridgeUrl =
+    window.location.protocol === "http:"
+      ? `ws://${window.location.host}`
+      : "ws://127.0.0.1:8787";
+  if (els.bridgeUrl && !els.bridgeUrl.value) {
+    els.bridgeUrl.value = defaultBridgeUrl;
+  }
 
   function iconFor(kind, label) {
     const safeLabel = escapeHtml(label || kind.toUpperCase());
@@ -81,6 +93,10 @@
         return "◎";
       case "threat":
         return "!";
+      case "gunshot":
+        return "!";
+      case "direction":
+        return ">";
       case "hold":
         return "▲";
       case "route":
@@ -130,6 +146,74 @@
       return String(marker.id);
     }
     return `${marker.kind || "location"}:${marker.label || ""}:${marker.lat}:${marker.lon}`;
+  }
+
+  function destinationPoint(lat, lon, bearingDeg, meters) {
+    const radius = 6371000;
+    const bearing = bearingDeg * Math.PI / 180;
+    const lat1 = lat * Math.PI / 180;
+    const lon1 = lon * Math.PI / 180;
+    const distance = meters / radius;
+    const lat2 = Math.asin(
+      Math.sin(lat1) * Math.cos(distance) +
+      Math.cos(lat1) * Math.sin(distance) * Math.cos(bearing)
+    );
+    const lon2 = lon1 + Math.atan2(
+      Math.sin(bearing) * Math.sin(distance) * Math.cos(lat1),
+      Math.cos(distance) - Math.sin(lat1) * Math.sin(lat2)
+    );
+    return [lat2 * 180 / Math.PI, lon2 * 180 / Math.PI];
+  }
+
+  function clearDirection(id) {
+    const existing = layers.directions.get(id);
+    if (existing) {
+      existing.remove();
+      layers.directions.delete(id);
+    }
+  }
+
+  function updateDirectionOverlay(marker) {
+    clearDirection(marker.id);
+    if (!["threat", "gunshot", "direction"].includes(marker.kind) ||
+        marker.heading === null) {
+      return;
+    }
+
+    const color = colors[marker.kind] || colors.location;
+    const rangeMeters = marker.kind === "gunshot" ? 260 : 180;
+    const group = L.layerGroup().addTo(map);
+    const start = [marker.lat, marker.lon];
+    const end = destinationPoint(marker.lat, marker.lon, marker.heading, rangeMeters);
+    L.polyline([start, end], {
+      color,
+      weight: marker.kind === "gunshot" ? 4 : 3,
+      opacity: 0.88
+    }).addTo(group);
+
+    const coneDegrees = Number(marker.coneDegrees || 0);
+    if (coneDegrees > 0) {
+      const left = destinationPoint(
+        marker.lat,
+        marker.lon,
+        marker.heading - coneDegrees / 2,
+        rangeMeters
+      );
+      const right = destinationPoint(
+        marker.lat,
+        marker.lon,
+        marker.heading + coneDegrees / 2,
+        rangeMeters
+      );
+      L.polygon([start, left, end, right], {
+        color,
+        fillColor: color,
+        fillOpacity: 0.16,
+        weight: 1,
+        opacity: 0.7
+      }).addTo(group);
+    }
+    layers.directions.set(marker.id, group);
   }
 
   function updateNode(input) {
@@ -187,6 +271,10 @@
       lat,
       lon,
       heading: normalizeNumber(input.heading ?? input.headingDeg),
+      coneDegrees: normalizeNumber(input.coneDegrees),
+      expiresAt: input.ttlSeconds
+        ? Date.now() + normalizeNumber(input.ttlSeconds) * 1000
+        : normalizeNumber(input.expiresAt),
       updatedAt: Date.now()
     };
     state.markers.set(marker.id, marker);
@@ -201,6 +289,7 @@
       .setIcon(iconFor(kind, label))
       .bindPopup(markerPopup(marker));
 
+    updateDirectionOverlay(marker);
     if (kind === "route") {
       updateRoute(label);
     }
@@ -209,7 +298,8 @@
   }
 
   function markerPopup(marker) {
-    return `<strong>${escapeHtml(marker.label)}</strong><br>${escapeHtml(marker.kind.toUpperCase())}<br>${marker.lat.toFixed(6)}, ${marker.lon.toFixed(6)}`;
+    const heading = marker.heading === null ? "" : `<br>Heading ${Math.round(marker.heading)}°`;
+    return `<strong>${escapeHtml(marker.label)}</strong><br>${escapeHtml(marker.kind.toUpperCase())}<br>${marker.lat.toFixed(6)}, ${marker.lon.toFixed(6)}${heading}`;
   }
 
   function updateRoute(label) {
@@ -274,7 +364,7 @@
   }
 
   function connectBridge() {
-    const url = els.bridgeUrl.value.trim();
+    const url = els.bridgeUrl.value.trim() || defaultBridgeUrl;
     if (!url) {
       return;
     }
@@ -311,18 +401,33 @@
     }
   }
 
-  function buildCommand(kind, lat, lon, label) {
+  function buildCommand(kind, lat, lon, heading, label) {
     const safeLabel = String(label || kind.toUpperCase()).trim();
     if (kind === "hold") {
       return `!stop ${lat.toFixed(6)} ${lon.toFixed(6)} ${safeLabel}`;
     }
+    if (kind === "direction") {
+      return `!markdir ${lat.toFixed(6)} ${lon.toFixed(6)} ${Math.round(heading || 0)} ${safeLabel}`;
+    }
+    if (kind === "threat" || kind === "gunshot") {
+      return `!${kind} ${lat.toFixed(6)} ${lon.toFixed(6)} ${Math.round(heading || 0)} ${safeLabel}`;
+    }
+    if (kind === "lz") {
+      return `!lz ${lat.toFixed(6)} ${lon.toFixed(6)} ${safeLabel}`;
+    }
     return `!${kind} ${lat.toFixed(6)} ${lon.toFixed(6)} ${safeLabel}`;
   }
 
-  function sendMarker(kind, lat, lon, label) {
-    const marker = { type: "marker", kind, label, lat, lon };
+  function sendMarker(kind, lat, lon, heading, label) {
+    const marker = { type: "marker", kind, label, lat, lon, heading };
+    if (kind === "threat") {
+      marker.coneDegrees = 3;
+      marker.ttlSeconds = 5;
+    } else if (kind === "gunshot" || kind === "direction") {
+      marker.ttlSeconds = 5;
+    }
     updateMarker(marker);
-    const command = buildCommand(kind, lat, lon, label);
+    const command = buildCommand(kind, lat, lon, heading, label);
     if (state.socket && state.connected) {
       state.socket.send(JSON.stringify({
         type: "marker_command",
@@ -358,6 +463,23 @@
     els.meshReadout.textContent = node.source.toUpperCase();
   }
 
+  function pruneExpiredMarkers() {
+    const now = Date.now();
+    Array.from(state.markers.values()).forEach((marker) => {
+      if (!marker.expiresAt || marker.expiresAt > now) {
+        return;
+      }
+      state.markers.delete(marker.id);
+      const markerLayer = layers.markers.get(marker.id);
+      if (markerLayer) {
+        markerLayer.remove();
+        layers.markers.delete(marker.id);
+      }
+      clearDirection(marker.id);
+    });
+    updateMetrics();
+  }
+
   function loadDemo() {
     handleMessage({
       type: "snapshot",
@@ -369,6 +491,9 @@
       ],
       markers: [
         { id: "target:ridge", kind: "target", label: "RIDGE", lat: 39.1261, lon: -77.1179 },
+        { id: "threat:demo", kind: "threat", label: "THREAT", lat: 39.1249, lon: -77.1211, heading: 62, coneDegrees: 3, ttlSeconds: 5 },
+        { id: "gunshot:demo", kind: "gunshot", label: "GUNSHOT", lat: 39.1222, lon: -77.1250, heading: 312, ttlSeconds: 5 },
+        { id: "direction:demo", kind: "direction", label: "MARK DIR", lat: 39.1231, lon: -77.1238, heading: 118, ttlSeconds: 5 },
         { id: "lz:bravo", kind: "lz", label: "LZ BRAVO", lat: 39.1199, lon: -77.1308 },
         { id: "route:a:1", kind: "route", label: "ROUTE ALPHA", lat: 39.1211, lon: -77.1274 },
         { id: "route:a:2", kind: "route", label: "ROUTE ALPHA", lat: 39.1228, lon: -77.1241 },
@@ -385,6 +510,9 @@
       const centerPoint = map.getCenter();
       els.markerLat.value = centerPoint.lat.toFixed(6);
       els.markerLon.value = centerPoint.lng.toFixed(6);
+      if (els.markerHeading && state.latestNode && state.latestNode.heading !== null) {
+        els.markerHeading.value = Math.round(state.latestNode.heading);
+      }
       addFeed("TOOL", `${state.selectedKind.toUpperCase()} marker armed at map center`);
     });
   });
@@ -409,11 +537,12 @@
     const label = els.markerLabel.value.trim() || kind.toUpperCase();
     const lat = normalizeNumber(els.markerLat.value);
     const lon = normalizeNumber(els.markerLon.value);
+    const heading = normalizeNumber(els.markerHeading ? els.markerHeading.value : 0) || 0;
     if (lat === null || lon === null) {
       addFeed("ERROR", "Marker latitude/longitude is invalid");
       return;
     }
-    sendMarker(kind, lat, lon, label);
+    sendMarker(kind, lat, lon, heading, label);
   });
 
   map.on("click", (event) => {
@@ -426,5 +555,6 @@
   els.loadDemo.addEventListener("click", loadDemo);
 
   setSocketState(false, "Closed");
-  loadDemo();
+  addFeed("READY", "Start the local Meshtastic bridge, then connect for live data");
+  window.setInterval(pruneExpiredMarkers, 1000);
 })();

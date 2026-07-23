@@ -36,6 +36,8 @@
           <button type="button" data-marker-kind="target">Target</button>
           <button type="button" data-marker-kind="route">Route</button>
           <button type="button" data-marker-kind="threat">Threat</button>
+          <button type="button" data-marker-kind="gunshot">Shot</button>
+          <button type="button" data-marker-kind="direction">Direction</button>
           <button type="button" data-marker-kind="hold">Hold</button>
         </div>
       </div>
@@ -71,12 +73,13 @@
         </div>
         <label class="field-label" for="bridge-url">Bridge WebSocket</label>
         <div class="connect-row">
-          <input id="bridge-url" value="ws://127.0.0.1:8787" spellcheck="false">
+          <input id="bridge-url" value="" placeholder="same-origin bridge" spellcheck="false">
           <button type="button" id="connect-bridge">Connect</button>
         </div>
         <p class="fine-print">
-          The page accepts live JSON snapshots and marker events from the
-          headset or a local Meshtastic bridge.
+          Run <code>python tools/TalleySoftVisionMeshtasticBridge.py --port COM3</code>
+          and open <code>http://127.0.0.1:8787/</code> for live Meshtastic
+          nodes, headset tracks, and marker transmit.
         </p>
       </section>
 
@@ -92,6 +95,8 @@
         <div class="tool-stack">
           <button type="button" data-marker-kind="target">Set Target</button>
           <button type="button" data-marker-kind="route">Add Route Point</button>
+          <button type="button" data-marker-kind="direction">Mark Direction</button>
+          <button type="button" data-marker-kind="gunshot">Mark Shot</button>
           <button type="button" data-marker-kind="lz">Set LZ</button>
           <button type="button" data-marker-kind="medical">Set Medical</button>
         </div>
@@ -104,6 +109,8 @@
             <option value="lz">LZ</option>
             <option value="medical">Medical</option>
             <option value="threat">Threat</option>
+            <option value="gunshot">Gunshot</option>
+            <option value="direction">Direction</option>
             <option value="hold">Hold</option>
           </select>
           <label class="field-label" for="marker-label">Label</label>
@@ -112,6 +119,8 @@
             <label><span>Lat</span><input id="marker-lat" inputmode="decimal" value="39.123456"></label>
             <label><span>Lon</span><input id="marker-lon" inputmode="decimal" value="-77.123456"></label>
           </div>
+          <label class="field-label" for="marker-heading">Heading</label>
+          <input id="marker-heading" inputmode="decimal" value="0">
           <button type="submit">Send Marker</button>
         </form>
       </section>
@@ -138,6 +147,9 @@
         <code>!route 39.123456 -77.123456 ROUTE ALPHA</code>
         <code>!lz 39.123456 -77.123456 LZ BRAVO</code>
         <code>!medical 39.123456 -77.123456 AID</code>
+        <code>!threat 39.123456 -77.123456 42 THREAT</code>
+        <code>!gunshot 39.123456 -77.123456 42 GUNSHOT</code>
+        <code>!markdir 39.123456 -77.123456 42 MARK DIR</code>
         <code>CoT PLI 239.2.3.1:6969</code>
       </div>
     </section>

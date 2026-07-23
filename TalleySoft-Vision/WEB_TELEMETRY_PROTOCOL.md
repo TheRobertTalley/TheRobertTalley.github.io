@@ -8,18 +8,27 @@ endpoint is:
 ws://127.0.0.1:8787
 ```
 
-Use `tools/TalleySoftVisionWebBridge.ps1` on the operator machine to accept
-events from a headset, Meshtastic gateway, or local test tool and broadcast them
-to the browser.
+Use the Meshtastic bridge on the operator machine with the XIAO radio attached:
+
+```powershell
+python tools\TalleySoftVisionMeshtasticBridge.py --port COM3
+```
+
+Then open `http://127.0.0.1:8787/`. The bridge serves the same map UI locally
+and the page connects to its same-origin WebSocket automatically. The public
+GitHub Pages site can still connect to `ws://127.0.0.1:8787` manually when the
+browser allows it, but the local URL is the reliable live-ops path. The older
+`tools/TalleySoftVisionWebBridge.ps1` remains useful for replaying test JSON,
+but it does not open the radio or transmit marker commands.
 
 ## Data Path
 
 ```text
 GPS / Meshtastic node data
-  -> headset or local Meshtastic bridge
-  -> HTTP POST JSON to TalleySoftVisionWebBridge
-  -> WebSocket broadcast
-  -> https://theroberttalley.github.io/TalleySoft-Vision/
+  -> XIAO / Meshtastic serial radio on the operator PC
+  -> TalleySoftVisionMeshtasticBridge.py
+  -> same-origin WebSocket broadcast
+  -> http://127.0.0.1:8787/
 ```
 
 ## Snapshot
@@ -93,7 +102,13 @@ Supported marker kinds:
 - `lz`
 - `medical`
 - `threat`
-- `hold`
+- `gunshot`
+- `direction`
+- `hold` for stop/halt alerts
+
+Directional event markers may include `heading`, `coneDegrees`, and
+`ttlSeconds`. The web map draws threat cones, gunshot lines, and mark-direction
+lines from those fields and expires short-lived events locally.
 
 ## Browser-To-Bridge Marker Command
 
@@ -113,6 +128,16 @@ When connected, the page sends marker commands back to the bridge:
 }
 ```
 
-The first bridge implementation logs this command and rebroadcasts it. A later
-Meshtastic transmit adapter should forward `command` to the radio text channel.
+When the Python Meshtastic bridge is connected, it forwards `command` to the
+radio text channel with the same open marker format parsed by the headset HUD.
+Without a connected radio, the browser still previews the marker locally.
 
+## Bridge Health
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8787/health
+Invoke-RestMethod http://127.0.0.1:8787/snapshot
+```
+
+The snapshot endpoint is useful for confirming node GPS and marker payloads
+before opening the public page.

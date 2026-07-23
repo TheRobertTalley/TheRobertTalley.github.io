@@ -68,7 +68,7 @@
         <h2>Map &amp; Mesh</h2>
         <ul>
           <li>Tracks Meshtastic nodes, messages, markers, routes, and compass bearings.</li>
-          <li>Accepts marker text commands such as <code>!target</code>, <code>!location</code>, <code>!route</code>, <code>!lz</code>, and <code>!medical</code>.</li>
+          <li>Accepts marker text commands such as <code>!target</code>, <code>!location</code>, <code>!route</code>, <code>!lz</code>, <code>!medical</code>, <code>!threat</code>, <code>!gunshot</code>, and <code>!markdir</code>.</li>
           <li>Accepts ATAK Cursor-on-Target PLI and point events.</li>
           <li>Breadcrumbs should only be placed when GPS accuracy is 20 yards or better.</li>
         </ul>
@@ -82,6 +82,10 @@
           <li><code>!route</code>: repeated route points connected by label.</li>
           <li><code>!lz</code>: landing-zone marker.</li>
           <li><code>!medical</code>: aid or casualty collection marker.</li>
+          <li><code>!threat</code>: yellow 3-degree directional cone that fades after 5 seconds.</li>
+          <li><code>!gunshot</code>: red shot-direction line that fades after 5 seconds.</li>
+          <li><code>!markdir</code>: green heading line that fades after 5 seconds.</li>
+          <li><code>!stop</code> or <code>!halt</code>: red hold alert marker and stop-movement event.</li>
           <li>Cursor-on-Target PLI and point events are accepted on the configured TAK multicast path.</li>
         </ul>
       </article>
@@ -90,8 +94,8 @@
         <h2>Web Operations</h2>
         <ul>
           <li>The Vision website is for map operations, marker setup, team tracking, and tactical status.</li>
-          <li>Marker buttons add local preview events without requiring a headset connection.</li>
-          <li>The page accepts live telemetry snapshots over a local WebSocket bridge.</li>
+          <li>Marker buttons add local preview events and transmit marker commands when the local Meshtastic bridge is connected.</li>
+          <li>The page accepts live telemetry snapshots over <code>ws://127.0.0.1:8787</code> from <code>TalleySoftVisionMeshtasticBridge.py</code>.</li>
           <li>OpenStreetMap tiles provide the base map, with marker and route overlays drawn in the browser.</li>
           <li>Device maintenance tools are intentionally kept off the Vision website.</li>
         </ul>

@@ -6,6 +6,7 @@ the headset in the field. The default browser endpoint is:
 
 ```text
 ws://HEADSET-IP:8787
+http://HEADSET-IP:8787/
 ```
 
 For bench testing from this computer, forward the headset port over wireless
@@ -15,8 +16,8 @@ ADB:
 adb -s 192.168.1.61:5555 forward tcp:8787 tcp:8787
 ```
 
-Then use `ws://127.0.0.1:8787` from the web page or open
-`http://127.0.0.1:8787/snapshot` to confirm headset data. The older
+Then open `http://127.0.0.1:8787/` for the headset-served same-origin live map
+or `http://127.0.0.1:8787/snapshot` to confirm headset data. The older
 `TalleySoftVisionMeshtasticBridge.py` remains useful only when the radio is
 plugged into the PC instead of the headset.
 

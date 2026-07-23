@@ -87,14 +87,18 @@ Talleysoft Vision. The headset app hosts telemetry on port `8787`:
 
 ```text
 ws://HEADSET-IP:8787
+http://HEADSET-IP:8787/
 http://HEADSET-IP:8787/snapshot
 ```
 
-Open the public TSV operations page and set the bridge URL to the headset
-address. For bench testing over ADB, forward the headset telemetry port with
-`adb forward tcp:8787 tcp:8787` and use `ws://127.0.0.1:8787`. The older PC
-Python bridge remains available only for PC-attached radio testing. See
-`WEB_TELEMETRY_PROTOCOL.md` for the JSON and marker-command contract.
+Open `http://HEADSET-IP:8787/` for the same-origin live map served by the
+headset. The public TSV operations page can still be used for static access and
+manual bridge entry, but the headset URL is the reliable live path when the
+radio is plugged into the headset. For bench testing over ADB, forward the
+headset telemetry port with `adb forward tcp:8787 tcp:8787` and use
+`http://127.0.0.1:8787/`. The older PC Python bridge remains available only for
+PC-attached radio testing. See `WEB_TELEMETRY_PROTOCOL.md` for the JSON and
+marker-command contract.
 
 See `quest\SphereCockpit\ARCHITECTURE.md` for the delivery order and latency
 rules.

@@ -177,18 +177,59 @@ h2 {
 .map-frame {
   position: relative;
   min-height: 32rem;
-  background:
-    linear-gradient(rgba(65, 241, 155, 0.07) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(65, 241, 155, 0.07) 1px, transparent 1px),
-    #07110e;
-  background-size: 42px 42px;
+  background: #07110e;
 }
 
-canvas {
+#ops-map {
   display: block;
   width: 100%;
-  height: 100%;
   min-height: 32rem;
+  height: clamp(32rem, 68vh, 46rem);
+  background: #07110e;
+}
+
+.leaflet-container {
+  background: #07110e;
+  color: var(--text);
+  font: inherit;
+}
+
+.leaflet-control-attribution {
+  background: rgba(5, 10, 8, 0.82);
+  color: var(--muted);
+}
+
+.leaflet-control-attribution a {
+  color: var(--green);
+}
+
+.tsv-marker {
+  display: flex;
+  align-items: center;
+  gap: 0.32rem;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.tsv-marker span {
+  display: grid;
+  place-items: center;
+  width: 1.55rem;
+  height: 1.55rem;
+  border: 2px solid var(--marker-color);
+  border-radius: 50%;
+  background: rgba(5, 10, 8, 0.88);
+  color: var(--marker-color);
+  font-weight: 800;
+}
+
+.tsv-marker b {
+  border: 1px solid rgba(228, 255, 243, 0.24);
+  border-radius: 4px;
+  background: rgba(5, 10, 8, 0.78);
+  padding: 0.14rem 0.32rem;
+  font-size: 0.72rem;
+  font-weight: 700;
 }
 
 .map-readout {
@@ -232,6 +273,11 @@ canvas {
   color: var(--yellow);
 }
 
+.status-pill.good {
+  border-color: rgba(65, 241, 155, 0.55);
+  color: var(--green);
+}
+
 .metrics {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -265,6 +311,57 @@ dd {
 
 .tool-stack button {
   width: 100%;
+}
+
+.connect-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.field-label,
+.marker-form label span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+input,
+select {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: rgba(3, 8, 6, 0.76);
+  color: var(--text);
+  padding: 0.56rem 0.62rem;
+  font: inherit;
+}
+
+.fine-print {
+  margin-top: 0.65rem;
+  font-size: 0.86rem;
+}
+
+.marker-form {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.9rem;
+}
+
+.coord-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.schema-block {
+  overflow-x: auto;
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: rgba(3, 8, 6, 0.76);
+  padding: 1rem;
 }
 
 code {

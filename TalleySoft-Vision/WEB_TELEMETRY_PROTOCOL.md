@@ -1,0 +1,118 @@
+# TalleySoft Vision Web Telemetry Protocol
+
+The public Vision page is a static browser client. Realtime data reaches it
+through a local or headset-network WebSocket bridge. The default browser
+endpoint is:
+
+```text
+ws://127.0.0.1:8787
+```
+
+Use `tools/TalleySoftVisionWebBridge.ps1` on the operator machine to accept
+events from a headset, Meshtastic gateway, or local test tool and broadcast them
+to the browser.
+
+## Data Path
+
+```text
+GPS / Meshtastic node data
+  -> headset or local Meshtastic bridge
+  -> HTTP POST JSON to TalleySoftVisionWebBridge
+  -> WebSocket broadcast
+  -> https://theroberttalley.github.io/TalleySoft-Vision/
+```
+
+## Snapshot
+
+```json
+{
+  "type": "snapshot",
+  "center": { "lat": 39.123456, "lon": -77.123456, "zoom": 15 },
+  "nodes": [
+    {
+      "id": "!1234abcd",
+      "label": "ALPHA",
+      "lat": 39.123456,
+      "lon": -77.123456,
+      "heading": 42,
+      "accuracyYards": 12,
+      "source": "meshtastic"
+    }
+  ],
+  "markers": [
+    {
+      "id": "target:ridge",
+      "kind": "target",
+      "label": "RIDGE",
+      "lat": 39.1242,
+      "lon": -77.1208
+    }
+  ],
+  "messages": [
+    {
+      "kind": "TARGET",
+      "text": "RIDGE marker received"
+    }
+  ]
+}
+```
+
+## Incremental Node
+
+```json
+{
+  "type": "node",
+  "id": "!1234abcd",
+  "label": "ALPHA",
+  "lat": 39.123456,
+  "lon": -77.123456,
+  "heading": 42,
+  "accuracyYards": 12,
+  "source": "meshtastic"
+}
+```
+
+## Incremental Marker
+
+```json
+{
+  "type": "marker",
+  "id": "route:alpha:001",
+  "kind": "route",
+  "label": "ROUTE ALPHA",
+  "lat": 39.123456,
+  "lon": -77.123456
+}
+```
+
+Supported marker kinds:
+
+- `target`
+- `location`
+- `route`
+- `lz`
+- `medical`
+- `threat`
+- `hold`
+
+## Browser-To-Bridge Marker Command
+
+When connected, the page sends marker commands back to the bridge:
+
+```json
+{
+  "type": "marker_command",
+  "command": "!target 39.123456 -77.123456 RIDGE",
+  "marker": {
+    "type": "marker",
+    "kind": "target",
+    "label": "RIDGE",
+    "lat": 39.123456,
+    "lon": -77.123456
+  }
+}
+```
+
+The first bridge implementation logs this command and rebroadcasts it. A later
+Meshtastic transmit adapter should forward `command` to the radio text channel.
+

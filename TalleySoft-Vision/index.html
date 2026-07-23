@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>TalleySoft Vision IoT Ops</title>
   <meta name="description" content="TalleySoft Vision team map, headset tracker, ATAK markers, targets, routes, and tactical alerts.">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="assets/talleysoft-site.css">
 </head>
 <body>
@@ -27,24 +28,24 @@
     <section class="map-panel" aria-label="Team map">
       <div class="map-toolbar">
         <div>
-          <p class="eyebrow">Live-style map shell</p>
-          <h1>Headsets, targets, markers, and team trails</h1>
+          <p class="eyebrow">Realtime map client</p>
+          <h1>GPS, Meshtastic, headset tracks, markers, and routes</h1>
         </div>
         <div class="tool-actions" aria-label="Map tools">
           <button type="button" data-map-action="center">Center</button>
-          <button type="button" data-map-action="target">Target</button>
-          <button type="button" data-map-action="route">Route</button>
-          <button type="button" data-map-action="threat">Threat</button>
-          <button type="button" data-map-action="hold">Hold</button>
+          <button type="button" data-marker-kind="target">Target</button>
+          <button type="button" data-marker-kind="route">Route</button>
+          <button type="button" data-marker-kind="threat">Threat</button>
+          <button type="button" data-marker-kind="hold">Hold</button>
         </div>
       </div>
       <div class="map-frame">
-        <canvas id="ops-map" width="1280" height="780" aria-label="Tactical IoT map preview"></canvas>
+        <div id="ops-map" aria-label="Tactical operations map"></div>
         <div class="map-readout">
-          <span>GRID 17S</span>
-          <span>GPS OK</span>
-          <span>ACC 12 yd</span>
-          <span>MESHTASTIC CH 0</span>
+          <span id="grid-readout">MAP READY</span>
+          <span id="gps-readout">GPS WAIT</span>
+          <span id="accuracy-readout">ACC --</span>
+          <span id="mesh-readout">MESHTASTIC WAIT</span>
         </div>
       </div>
     </section>
@@ -53,14 +54,30 @@
       <section class="panel">
         <div class="panel-title">
           <h2>Network</h2>
-          <span class="status-pill good">Ready</span>
+          <span class="status-pill warn" id="connection-pill">Offline</span>
         </div>
         <dl class="metrics">
-          <div><dt>Headsets</dt><dd>4</dd></div>
-          <div><dt>Markers</dt><dd>9</dd></div>
-          <div><dt>Targets</dt><dd>2</dd></div>
-          <div><dt>Radio</dt><dd>Mesh</dd></div>
+          <div><dt>Headsets</dt><dd id="metric-headsets">0</dd></div>
+          <div><dt>Markers</dt><dd id="metric-markers">0</dd></div>
+          <div><dt>Targets</dt><dd id="metric-targets">0</dd></div>
+          <div><dt>Radio</dt><dd id="metric-radio">Local</dd></div>
         </dl>
+      </section>
+
+      <section class="panel">
+        <div class="panel-title">
+          <h2>Realtime Link</h2>
+          <span class="status-pill warn" id="socket-status">Closed</span>
+        </div>
+        <label class="field-label" for="bridge-url">Bridge WebSocket</label>
+        <div class="connect-row">
+          <input id="bridge-url" value="ws://127.0.0.1:8787" spellcheck="false">
+          <button type="button" id="connect-bridge">Connect</button>
+        </div>
+        <p class="fine-print">
+          The page accepts live JSON snapshots and marker events from the
+          headset or a local Meshtastic bridge.
+        </p>
       </section>
 
       <section class="panel" id="atak">
@@ -73,22 +90,39 @@
           headset or team mesh.
         </p>
         <div class="tool-stack">
-          <button type="button" data-map-action="target">Set Target</button>
-          <button type="button" data-map-action="route">Add Route Point</button>
-          <button type="button" data-map-action="lz">Set LZ</button>
-          <button type="button" data-map-action="medical">Set Medical</button>
+          <button type="button" data-marker-kind="target">Set Target</button>
+          <button type="button" data-marker-kind="route">Add Route Point</button>
+          <button type="button" data-marker-kind="lz">Set LZ</button>
+          <button type="button" data-marker-kind="medical">Set Medical</button>
         </div>
+        <form class="marker-form" id="marker-form">
+          <label class="field-label" for="marker-kind">Kind</label>
+          <select id="marker-kind">
+            <option value="target">Target</option>
+            <option value="location">Location</option>
+            <option value="route">Route</option>
+            <option value="lz">LZ</option>
+            <option value="medical">Medical</option>
+            <option value="threat">Threat</option>
+            <option value="hold">Hold</option>
+          </select>
+          <label class="field-label" for="marker-label">Label</label>
+          <input id="marker-label" value="RIDGE" maxlength="32">
+          <div class="coord-row">
+            <label><span>Lat</span><input id="marker-lat" inputmode="decimal" value="39.123456"></label>
+            <label><span>Lon</span><input id="marker-lon" inputmode="decimal" value="-77.123456"></label>
+          </div>
+          <button type="submit">Send Marker</button>
+        </form>
       </section>
 
       <section class="panel">
         <div class="panel-title">
           <h2>Event Feed</h2>
-          <span class="status-pill warn">Sim</span>
+          <span class="status-pill warn" id="feed-mode">Local</span>
         </div>
         <ol class="event-feed" id="event-feed">
-          <li><b>FOLLOW</b><span>Trail update accepted, 12 yd accuracy</span></li>
-          <li><b>TARGET</b><span>Marker RIDGE received over mesh</span></li>
-          <li><b>STOP</b><span>Alert faded after 2.5 seconds</span></li>
+          <li><b>READY</b><span>Open map loaded; connect bridge for live mesh data</span></li>
         </ol>
       </section>
     </aside>
@@ -107,8 +141,39 @@
         <code>CoT PLI 239.2.3.1:6969</code>
       </div>
     </section>
+
+    <section class="panel wide">
+      <div class="panel-title">
+        <h2>Realtime JSON Contract</h2>
+        <button type="button" id="load-demo">Load Demo Snapshot</button>
+      </div>
+      <pre class="schema-block"><code>{
+  "type": "snapshot",
+  "nodes": [
+    {
+      "id": "!1234abcd",
+      "label": "ALPHA",
+      "lat": 39.123456,
+      "lon": -77.123456,
+      "heading": 42,
+      "accuracyYards": 12,
+      "source": "meshtastic"
+    }
+  ],
+  "markers": [
+    {
+      "id": "target:ridge",
+      "kind": "target",
+      "label": "RIDGE",
+      "lat": 39.1242,
+      "lon": -77.1208
+    }
+  ]
+}</code></pre>
+    </section>
   </main>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="assets/talleysoft-site.js"></script>
 </body>
 </html>

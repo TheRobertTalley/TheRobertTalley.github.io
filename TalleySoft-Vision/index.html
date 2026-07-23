@@ -73,13 +73,13 @@
         </div>
         <label class="field-label" for="bridge-url">Bridge WebSocket</label>
         <div class="connect-row">
-          <input id="bridge-url" value="" placeholder="same-origin bridge" spellcheck="false">
+          <input id="bridge-url" value="" placeholder="ws://HEADSET-IP:8787" spellcheck="false">
           <button type="button" id="connect-bridge">Connect</button>
         </div>
         <p class="fine-print">
-          Run <code>python tools/TalleySoftVisionMeshtasticBridge.py --port COM3</code>
-          and open <code>http://127.0.0.1:8787/</code> for live Meshtastic
-          nodes, headset tracks, and marker transmit.
+          Connect to the headset telemetry URL, for example
+          <code>ws://HEADSET-IP:8787</code>, for live Meshtastic nodes,
+          headset tracks, and marker transmit.
         </p>
       </section>
 
@@ -131,7 +131,7 @@
           <span class="status-pill warn" id="feed-mode">Local</span>
         </div>
         <ol class="event-feed" id="event-feed">
-          <li><b>READY</b><span>Open map loaded; connect bridge for live mesh data</span></li>
+          <li><b>READY</b><span>Open map loaded; connect to headset telemetry for live mesh data</span></li>
         </ol>
       </section>
     </aside>

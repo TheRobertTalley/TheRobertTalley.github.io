@@ -82,15 +82,18 @@ The public TSV operations page is:
 `https://theroberttalley.github.io/TalleySoft-Vision/`
 
 For live Meshtastic GPS, headset tracks, markers, and browser-to-radio marker
-commands, attach the XIAO radio to the operator PC and run:
+commands, attach the XIAO/Meshtastic radio to the headset and launch
+Talleysoft Vision. The headset app hosts telemetry on port `8787`:
 
-```powershell
-python .\tools\TalleySoftVisionMeshtasticBridge.py --port COM3
+```text
+ws://HEADSET-IP:8787
+http://HEADSET-IP:8787/snapshot
 ```
 
-Then open the local live map at `http://127.0.0.1:8787/`. The public GitHub
-Pages site remains available for static access, but the local URL is the
-reliable same-origin path for live radio data and marker transmit. See
+Open the public TSV operations page and set the bridge URL to the headset
+address. For bench testing over ADB, forward the headset telemetry port with
+`adb forward tcp:8787 tcp:8787` and use `ws://127.0.0.1:8787`. The older PC
+Python bridge remains available only for PC-attached radio testing. See
 `WEB_TELEMETRY_PROTOCOL.md` for the JSON and marker-command contract.
 
 See `quest\SphereCockpit\ARCHITECTURE.md` for the delivery order and latency

@@ -68,10 +68,13 @@
     location: "#41f19b"
   };
 
-  const defaultBridgeUrl =
-    window.location.protocol === "http:"
+  const savedBridgeUrl = window.localStorage
+    ? window.localStorage.getItem("tsvBridgeUrl")
+    : "";
+  const defaultBridgeUrl = savedBridgeUrl ||
+    (window.location.protocol === "http:"
       ? `ws://${window.location.host}`
-      : "ws://127.0.0.1:8787";
+      : "ws://192.168.1.61:8787");
   if (els.bridgeUrl && !els.bridgeUrl.value) {
     els.bridgeUrl.value = defaultBridgeUrl;
   }
@@ -378,6 +381,9 @@
       setSocketState(false, "Opening");
       socket.addEventListener("open", () => {
         setSocketState(true, "Live");
+        if (window.localStorage) {
+          window.localStorage.setItem("tsvBridgeUrl", url);
+        }
         addFeed("BRIDGE", `Connected to ${url}`);
         socket.send(JSON.stringify({ type: "hello", client: "talleysoft-vision-web" }));
       });
@@ -555,6 +561,6 @@
   els.loadDemo.addEventListener("click", loadDemo);
 
   setSocketState(false, "Closed");
-  addFeed("READY", "Start the local Meshtastic bridge, then connect for live data");
+  addFeed("READY", "Connect to the headset telemetry address for live map data");
   window.setInterval(pruneExpiredMarkers, 1000);
 })();

@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TalleySoft Vision IoT Ops</title>
+  <meta name="description" content="TalleySoft Vision team map, headset tracker, markers, targets, and XIAO firmware hub.">
+  <link rel="stylesheet" href="assets/talleysoft-site.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html">
+      <span class="brand-mark">TSV</span>
+      <span>
+        <strong>TalleySoft Vision</strong>
+        <small>IoT Operations Hub</small>
+      </span>
+    </a>
+    <nav aria-label="Primary">
+      <a href="features-controls.html">Features &amp; Controls</a>
+      <a href="#firmware">XIAO Firmware</a>
+      <a href="#markers">Markers</a>
+    </nav>
+  </header>
+
+  <main class="ops-shell">
+    <section class="map-panel" aria-label="Team map">
+      <div class="map-toolbar">
+        <div>
+          <p class="eyebrow">Live-style map shell</p>
+          <h1>Headsets, targets, markers, and team trails</h1>
+        </div>
+        <div class="tool-actions" aria-label="Map tools">
+          <button type="button" data-map-action="center">Center</button>
+          <button type="button" data-map-action="threat">Test Threat</button>
+          <button type="button" data-map-action="gunshot">Test Gunshot</button>
+          <button type="button" data-map-action="follow">Drop Breadcrumb</button>
+        </div>
+      </div>
+      <div class="map-frame">
+        <canvas id="ops-map" width="1280" height="780" aria-label="Tactical IoT map preview"></canvas>
+        <div class="map-readout">
+          <span>GRID 17S</span>
+          <span>GPS OK</span>
+          <span>ACC 12 yd</span>
+          <span>MESHTASTIC CH 0</span>
+        </div>
+      </div>
+    </section>
+
+    <aside class="status-rail" aria-label="Mission status">
+      <section class="panel">
+        <div class="panel-title">
+          <h2>Network</h2>
+          <span class="status-pill good">Ready</span>
+        </div>
+        <dl class="metrics">
+          <div><dt>Headsets</dt><dd>4</dd></div>
+          <div><dt>Markers</dt><dd>9</dd></div>
+          <div><dt>Targets</dt><dd>2</dd></div>
+          <div><dt>Radio</dt><dd>Mesh</dd></div>
+        </dl>
+      </section>
+
+      <section class="panel" id="firmware">
+        <div class="panel-title">
+          <h2>XIAO Sense</h2>
+          <span class="status-pill good">UF2 valid</span>
+        </div>
+        <p>
+          Bundled firmware is validated and ready for the headset flasher or
+          manual UF2 copy.
+        </p>
+        <div class="firmware-card">
+          <span>SHA-256</span>
+          <code>A47CFCF1C14E390A2728C6C042941262A6EC07859B491CB23236626A4A38311E</code>
+        </div>
+        <div class="button-row">
+          <a class="button" href="quest/SphereCockpit/Assets/Plugins/Android/SphereCockpitPlugin.androidlib/src/main/assets/firmware/xiao-sense-meshtastic.uf2">Download UF2</a>
+          <a class="button ghost" href="firmware/xiao-sense-meshtastic/manifest.json">Manifest</a>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-title">
+          <h2>Event Feed</h2>
+          <span class="status-pill warn">Sim</span>
+        </div>
+        <ol class="event-feed" id="event-feed">
+          <li><b>FOLLOW</b><span>Trail update accepted, 12 yd accuracy</span></li>
+          <li><b>TARGET</b><span>Marker RIDGE received over mesh</span></li>
+          <li><b>STOP</b><span>Alert faded after 2.5 seconds</span></li>
+        </ol>
+      </section>
+    </aside>
+
+    <section class="panel wide" id="markers">
+      <div class="panel-title">
+        <h2>Marker Commands</h2>
+        <a href="features-controls.html">Open full controls</a>
+      </div>
+      <div class="command-grid">
+        <code>!threat 39.123456 -77.123456 042 XIAO1</code>
+        <code>!gunshot 39.123456 -77.123456 091 XIAO1</code>
+        <code>!heading 39.123456 -77.123456 270 XIAO1</code>
+        <code>!follow 39.123456 -77.123456 XIAO1</code>
+        <code>!stop 39.123456 -77.123456 XIAO1</code>
+      </div>
+    </section>
+  </main>
+
+  <script src="assets/talleysoft-site.js"></script>
+</body>
+</html>
+

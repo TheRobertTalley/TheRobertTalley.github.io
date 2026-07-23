@@ -1,0 +1,46 @@
+{
+  "device": "Seeed Studio XIAO nRF52840 Sense",
+  "firmwareName": "xiao-sense-meshtastic",
+  "format": "uf2",
+  "status": "bundled-ready-to-flash",
+  "version": "2026.07.23",
+  "path": "../../quest/SphereCockpit/Assets/Plugins/Android/SphereCockpitPlugin.androidlib/src/main/assets/firmware/xiao-sense-meshtastic.uf2",
+  "pagesPath": "quest/SphereCockpit/Assets/Plugins/Android/SphereCockpitPlugin.androidlib/src/main/assets/firmware/xiao-sense-meshtastic.uf2",
+  "sha256": "A47CFCF1C14E390A2728C6C042941262A6EC07859B491CB23236626A4A38311E",
+  "sizeBytes": 1063936,
+  "uf2BlockBytes": 512,
+  "uf2Blocks": 2078,
+  "targetEvents": [
+    {
+      "command": "!threat",
+      "color": "yellow",
+      "fadeSeconds": 5,
+      "description": "Voice or gesture possible-threat bearing marker"
+    },
+    {
+      "command": "!gunshot",
+      "color": "red",
+      "fadeSeconds": 5,
+      "description": "Impulse detection bearing marker"
+    },
+    {
+      "command": "!heading",
+      "color": "green",
+      "fadeSeconds": 5,
+      "description": "Mark-direction bearing marker"
+    },
+    {
+      "command": "!follow",
+      "color": "cyan",
+      "accuracyMaxYards": 20,
+      "description": "Follow-me breadcrumb event"
+    },
+    {
+      "command": "!stop",
+      "color": "bright-red",
+      "fadeSeconds": 2.5,
+      "description": "Stop/halt team alert"
+    }
+  ]
+}
+

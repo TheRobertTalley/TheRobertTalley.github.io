@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TalleySoft Vision Features & Controls</title>
+  <meta name="description" content="Complete TalleySoft Vision features and controls reference.">
+  <link rel="stylesheet" href="assets/talleysoft-site.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="index.html">
+      <span class="brand-mark">TSV</span>
+      <span>
+        <strong>TalleySoft Vision</strong>
+        <small>Features &amp; Controls</small>
+      </span>
+    </a>
+    <nav aria-label="Primary">
+      <a href="index.html">IoT Ops</a>
+      <a href="#headset">Headset</a>
+      <a href="#xiao">XIAO</a>
+    </nav>
+  </header>
+
+  <main class="reference-page">
+    <section class="reference-hero">
+      <p class="eyebrow">Project control map</p>
+      <h1>One page for the headset, bridge, radio, thermal, XIAO, and web ops layers.</h1>
+    </section>
+
+    <section class="reference-grid">
+      <article class="panel" id="headset">
+        <h2>Headset Controls</h2>
+        <ul>
+          <li>Right-hand dominant mode is default.</li>
+          <li>Left-hand mode mirrors left/right controls and docked HUD locations.</li>
+          <li>Palm toward headset plus index pinch shows or enlarges a quadrant item.</li>
+          <li>Palm away plus index pinch shrinks or hides a quadrant item.</li>
+          <li>Lower-right is weapon camera only: hidden, HUD, center, full.</li>
+          <li>Palm-up pinky pinch cycles weapon camera modes.</li>
+        </ul>
+      </article>
+
+      <article class="panel">
+        <h2>Thermal</h2>
+        <ul>
+          <li>Lower-left controls thermal visibility.</li>
+          <li>Center fusion supports saved near, medium, and far profiles.</li>
+          <li>Calibration covers position, rotation, scale, FOV, crop, warp, distortion, opacity, palette, timing, and distance.</li>
+          <li>Modes are Balanced, Target, Detail, and Manual.</li>
+          <li>Edge palette remains palette 3.</li>
+        </ul>
+      </article>
+
+      <article class="panel">
+        <h2>Display Menu</h2>
+        <ul>
+          <li>Default color theme drives normal HUD and map styling.</li>
+          <li>HUD and compass themes can override their own surfaces.</li>
+          <li>Menu opacity adjusts panel transparency.</li>
+          <li>Clock supports digital, analog, stopwatch, countdown, 24-hour time, and seconds.</li>
+          <li>Reasonable settings expose a reset path on the relevant page.</li>
+        </ul>
+      </article>
+
+      <article class="panel">
+        <h2>Map &amp; Mesh</h2>
+        <ul>
+          <li>Tracks Meshtastic nodes, messages, markers, routes, and compass bearings.</li>
+          <li>Accepts marker text commands such as <code>!target</code>, <code>!location</code>, <code>!route</code>, <code>!lz</code>, and <code>!medical</code>.</li>
+          <li>Accepts ATAK Cursor-on-Target PLI and point events.</li>
+          <li>Breadcrumbs should only be placed when GPS accuracy is 20 yards or better.</li>
+        </ul>
+      </article>
+
+      <article class="panel" id="xiao">
+        <h2>XIAO Sense Events</h2>
+        <ul>
+          <li><code>!threat</code>: yellow 3-degree possible-threat bearing, 5 second fade.</li>
+          <li><code>!gunshot</code>: red possible-gunshot bearing, 5 second fade.</li>
+          <li><code>!heading</code>: green mark-direction bearing.</li>
+          <li><code>!follow</code>: breadcrumb event gated by GPS accuracy.</li>
+          <li><code>!stop</code>: bright-red stop alert and triangle, 2.5 second fade.</li>
+        </ul>
+      </article>
+
+      <article class="panel">
+        <h2>Firmware Flash</h2>
+        <ul>
+          <li>Bundled UF2 is valid and included in the Android plugin assets.</li>
+          <li>Headset flasher can request DFU and write the UF2 over USB mass storage.</li>
+          <li>Manual fallback is double-tap reset and copy UF2 to the bootloader drive.</li>
+          <li>Firmware manifest is stored at <code>firmware/xiao-sense-meshtastic/manifest.json</code>.</li>
+        </ul>
+      </article>
+    </section>
+  </main>
+</body>
+</html>
+

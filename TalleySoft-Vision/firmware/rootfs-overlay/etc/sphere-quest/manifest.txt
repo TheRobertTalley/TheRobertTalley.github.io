@@ -1,0 +1,4 @@
+Sphere Link direct Quest patch
+USB gadget: CDC-ACM-only FPV bridge on fcc00000.dwc3
+Video input: 127.0.0.1:5601
+Video outputs: local HDMI UDP and SLIP-framed /dev/ttyGS0

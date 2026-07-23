@@ -19,14 +19,14 @@
     <nav aria-label="Primary">
       <a href="index.html">IoT Ops</a>
       <a href="#headset">Headset</a>
-      <a href="#xiao">XIAO</a>
+      <a href="#atak">ATAK</a>
     </nav>
   </header>
 
   <main class="reference-page">
     <section class="reference-hero">
       <p class="eyebrow">Project control map</p>
-      <h1>One page for the headset, bridge, radio, thermal, XIAO, and web ops layers.</h1>
+      <h1>One page for headset controls, map operations, ATAK-style markers, team tracks, and tactical overlays.</h1>
     </section>
 
     <section class="reference-grid">
@@ -74,24 +74,25 @@
         </ul>
       </article>
 
-      <article class="panel" id="xiao">
-        <h2>XIAO Sense Events</h2>
+      <article class="panel" id="atak">
+        <h2>ATAK-Style Events</h2>
         <ul>
-          <li><code>!threat</code>: yellow 3-degree possible-threat bearing, 5 second fade.</li>
-          <li><code>!gunshot</code>: red possible-gunshot bearing, 5 second fade.</li>
-          <li><code>!heading</code>: green mark-direction bearing.</li>
-          <li><code>!follow</code>: breadcrumb event gated by GPS accuracy.</li>
-          <li><code>!stop</code>: bright-red stop alert and triangle, 2.5 second fade.</li>
+          <li><code>!target</code>: target marker with label and decimal coordinates.</li>
+          <li><code>!location</code>: rally, checkpoint, observation point, or general marker.</li>
+          <li><code>!route</code>: repeated route points connected by label.</li>
+          <li><code>!lz</code>: landing-zone marker.</li>
+          <li><code>!medical</code>: aid or casualty collection marker.</li>
+          <li>Cursor-on-Target PLI and point events are accepted on the configured TAK multicast path.</li>
         </ul>
       </article>
 
       <article class="panel">
-        <h2>Firmware Flash</h2>
+        <h2>Web Operations</h2>
         <ul>
-          <li>Bundled UF2 is valid and included in the Android plugin assets.</li>
-          <li>Headset flasher can request DFU and write the UF2 over USB mass storage.</li>
-          <li>Manual fallback is double-tap reset and copy UF2 to the bootloader drive.</li>
-          <li>Firmware manifest is stored at <code>firmware/xiao-sense-meshtastic/manifest.json</code>.</li>
+          <li>The Vision website is for map operations, marker setup, team tracking, and tactical status.</li>
+          <li>Marker buttons add local preview events without requiring a headset connection.</li>
+          <li>The page is structured so live telemetry snapshots can be wired in later.</li>
+          <li>Device maintenance tools are intentionally kept off the Vision website.</li>
         </ul>
       </article>
     </section>

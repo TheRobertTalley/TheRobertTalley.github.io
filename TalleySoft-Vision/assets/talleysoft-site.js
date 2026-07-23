@@ -115,6 +115,11 @@
       ctx.lineTo(x - 16, y + 14);
       ctx.closePath();
       ctx.stroke();
+    } else if (event.type === "route") {
+      ctx.strokeRect(x - 10, y - 10, 20, 20);
+    } else if (event.type === "medical") {
+      ctx.fillRect(x - 3, y - 14, 6, 28);
+      ctx.fillRect(x - 14, y - 3, 28, 6);
     } else {
       ctx.beginPath();
       ctx.arc(x, y, 10, 0, Math.PI * 2);
@@ -161,8 +166,17 @@
   }
 
   function addMapEvent(kind) {
-    const type = kind === "gunshot" ? "target" : "marker";
-    const color = kind === "gunshot" ? "#ff4c4c" : kind === "threat" ? "#ffd447" : "#4ddfea";
+    const type =
+      kind === "target" ? "target" :
+      kind === "route" ? "route" :
+      kind === "medical" ? "medical" :
+      "marker";
+    const color =
+      kind === "target" ? "#ff4c4c" :
+      kind === "threat" || kind === "lz" ? "#ffd447" :
+      kind === "hold" ? "#ff4c4c" :
+      kind === "medical" ? "#e4fff3" :
+      "#4ddfea";
     state.events.push({
       type,
       label: kind.toUpperCase(),
@@ -170,7 +184,7 @@
       y: 0.22 + Math.random() * 0.5,
       color
     });
-    if (kind === "follow") {
+    if (kind === "route") {
       state.trail.push([0.42 + Math.random() * 0.22, 0.43 + Math.random() * 0.18]);
     }
     draw();

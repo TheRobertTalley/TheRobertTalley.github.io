@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>TalleySoft Vision IoT Ops</title>
-  <meta name="description" content="TalleySoft Vision team map, headset tracker, markers, targets, and XIAO firmware hub.">
+  <meta name="description" content="TalleySoft Vision team map, headset tracker, ATAK markers, targets, routes, and tactical alerts.">
   <link rel="stylesheet" href="assets/talleysoft-site.css">
 </head>
 <body>
@@ -18,7 +18,7 @@
     </a>
     <nav aria-label="Primary">
       <a href="features-controls.html">Features &amp; Controls</a>
-      <a href="#firmware">XIAO Firmware</a>
+      <a href="#atak">ATAK Tools</a>
       <a href="#markers">Markers</a>
     </nav>
   </header>
@@ -32,9 +32,10 @@
         </div>
         <div class="tool-actions" aria-label="Map tools">
           <button type="button" data-map-action="center">Center</button>
-          <button type="button" data-map-action="threat">Test Threat</button>
-          <button type="button" data-map-action="gunshot">Test Gunshot</button>
-          <button type="button" data-map-action="follow">Drop Breadcrumb</button>
+          <button type="button" data-map-action="target">Target</button>
+          <button type="button" data-map-action="route">Route</button>
+          <button type="button" data-map-action="threat">Threat</button>
+          <button type="button" data-map-action="hold">Hold</button>
         </div>
       </div>
       <div class="map-frame">
@@ -62,22 +63,20 @@
         </dl>
       </section>
 
-      <section class="panel" id="firmware">
+      <section class="panel" id="atak">
         <div class="panel-title">
-          <h2>XIAO Sense</h2>
-          <span class="status-pill good">UF2 valid</span>
+          <h2>ATAK Tools</h2>
+          <span class="status-pill good">Local</span>
         </div>
         <p>
-          Bundled firmware is validated and ready for the headset flasher or
-          manual UF2 copy.
+          Build and preview tactical map events before sending them to the
+          headset or team mesh.
         </p>
-        <div class="firmware-card">
-          <span>SHA-256</span>
-          <code>A47CFCF1C14E390A2728C6C042941262A6EC07859B491CB23236626A4A38311E</code>
-        </div>
-        <div class="button-row">
-          <a class="button" href="quest/SphereCockpit/Assets/Plugins/Android/SphereCockpitPlugin.androidlib/src/main/assets/firmware/xiao-sense-meshtastic.uf2">Download UF2</a>
-          <a class="button ghost" href="firmware/xiao-sense-meshtastic/manifest.json">Manifest</a>
+        <div class="tool-stack">
+          <button type="button" data-map-action="target">Set Target</button>
+          <button type="button" data-map-action="route">Add Route Point</button>
+          <button type="button" data-map-action="lz">Set LZ</button>
+          <button type="button" data-map-action="medical">Set Medical</button>
         </div>
       </section>
 
@@ -100,11 +99,12 @@
         <a href="features-controls.html">Open full controls</a>
       </div>
       <div class="command-grid">
-        <code>!threat 39.123456 -77.123456 042 XIAO1</code>
-        <code>!gunshot 39.123456 -77.123456 091 XIAO1</code>
-        <code>!heading 39.123456 -77.123456 270 XIAO1</code>
-        <code>!follow 39.123456 -77.123456 XIAO1</code>
-        <code>!stop 39.123456 -77.123456 XIAO1</code>
+        <code>!target 39.123456,-77.123456 RIDGE</code>
+        <code>!location 39.123456 -77.123456 RALLY</code>
+        <code>!route 39.123456 -77.123456 ROUTE ALPHA</code>
+        <code>!lz 39.123456 -77.123456 LZ BRAVO</code>
+        <code>!medical 39.123456 -77.123456 AID</code>
+        <code>CoT PLI 239.2.3.1:6969</code>
       </div>
     </section>
   </main>

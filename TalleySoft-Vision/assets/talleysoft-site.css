@@ -320,6 +320,53 @@ dd {
   margin-top: 0.35rem;
 }
 
+.headset-actions {
+  margin-top: 0.55rem;
+}
+
+.headset-list {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0.7rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.headset-list li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: rgba(3, 8, 6, 0.48);
+  padding: 0.45rem;
+}
+
+.headset-list li > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.headset-list b {
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.headset-list button {
+  padding: 0.38rem 0.48rem;
+  font-size: 0.78rem;
+}
+
+.good-text {
+  color: var(--green);
+}
+
+.warn-text {
+  color: var(--yellow);
+}
+
 .field-label,
 .marker-form label span {
   display: block;

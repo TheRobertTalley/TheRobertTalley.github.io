@@ -94,9 +94,11 @@
         <h2>Web Operations</h2>
         <ul>
           <li>The Vision website is for map operations, marker setup, team tracking, and tactical status.</li>
-          <li>Marker buttons add local preview events and transmit marker commands when the headset telemetry bridge is connected.</li>
-          <li>The page accepts live telemetry snapshots over <code>ws://HEADSET-IP:8787</code> from the Talleysoft Vision headset app.</li>
-          <li>The headset also serves a same-origin live map at <code>http://HEADSET-IP:8787/</code> for field use.</li>
+          <li>The default map opens on Historic Gainesville Square in Gainesville, GA.</li>
+          <li>Add every same-network headset as <code>ws://HEADSET-IP:8787</code> in the Headsets panel.</li>
+          <li>Marker buttons add local preview events and transmit marker commands to every connected headset.</li>
+          <li>Each headset also serves a same-origin live map at <code>http://HEADSET-IP:8787/</code> for field fallback.</li>
+          <li>GitHub Pages is static; off-network realtime headset push requires a separate HTTPS/WSS relay.</li>
           <li>OpenStreetMap tiles provide the base map, with marker and route overlays drawn in the browser.</li>
           <li>Device maintenance tools are intentionally kept off the Vision website.</li>
         </ul>

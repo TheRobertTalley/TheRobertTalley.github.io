@@ -28,7 +28,7 @@
     <section class="map-panel" aria-label="Team map">
       <div class="map-toolbar">
         <div>
-          <p class="eyebrow">Realtime map client</p>
+          <p class="eyebrow">Gainesville Square operations map</p>
           <h1>GPS, Meshtastic, headset tracks, markers, and routes</h1>
         </div>
         <div class="tool-actions" aria-label="Map tools">
@@ -68,19 +68,25 @@
 
       <section class="panel">
         <div class="panel-title">
-          <h2>Realtime Link</h2>
-          <span class="status-pill warn" id="socket-status">Closed</span>
+          <h2>Headsets</h2>
+          <span class="status-pill warn" id="socket-status">No headset</span>
         </div>
-        <label class="field-label" for="bridge-url">Bridge WebSocket</label>
+        <label class="field-label" for="headset-url">Headset WebSocket</label>
         <div class="connect-row">
-          <input id="bridge-url" value="" placeholder="ws://HEADSET-IP:8787" spellcheck="false">
-          <button type="button" id="connect-bridge">Connect</button>
+          <input id="headset-url" value="" placeholder="ws://HEADSET-IP:8787" spellcheck="false">
+          <button type="button" id="add-headset">Add</button>
         </div>
+        <div class="button-row headset-actions">
+          <button type="button" id="connect-all-headsets">Connect All</button>
+          <button type="button" id="disconnect-all-headsets">Disconnect All</button>
+        </div>
+        <ul class="headset-list" id="headset-list">
+          <li>No headset endpoints saved.</li>
+        </ul>
         <p class="fine-print">
-          For the most reliable live map, open
-          <code>http://HEADSET-IP:8787/</code>. This public page can also
-          connect to <code>ws://HEADSET-IP:8787</code> when the browser allows
-          local headset WebSocket access.
+          Add each headset on the same network as <code>ws://HEADSET-IP:8787</code>.
+          If the browser blocks local WebSocket access from GitHub Pages, open
+          <code>http://HEADSET-IP:8787/</code> directly from that headset.
         </p>
       </section>
 
@@ -117,8 +123,8 @@
           <label class="field-label" for="marker-label">Label</label>
           <input id="marker-label" value="RIDGE" maxlength="32">
           <div class="coord-row">
-            <label><span>Lat</span><input id="marker-lat" inputmode="decimal" value="39.123456"></label>
-            <label><span>Lon</span><input id="marker-lon" inputmode="decimal" value="-77.123456"></label>
+            <label><span>Lat</span><input id="marker-lat" inputmode="decimal" value="34.298138"></label>
+            <label><span>Lon</span><input id="marker-lon" inputmode="decimal" value="-83.825764"></label>
           </div>
           <label class="field-label" for="marker-heading">Heading</label>
           <input id="marker-heading" inputmode="decimal" value="0">
@@ -132,7 +138,7 @@
           <span class="status-pill warn" id="feed-mode">Local</span>
         </div>
         <ol class="event-feed" id="event-feed">
-          <li><b>READY</b><span>Open map loaded; connect to headset telemetry for live mesh data</span></li>
+          <li><b>READY</b><span>Gainesville Square map loaded; add headset endpoints for live mesh data</span></li>
         </ol>
       </section>
     </aside>
@@ -143,14 +149,14 @@
         <a href="features-controls.html">Open full controls</a>
       </div>
       <div class="command-grid">
-        <code>!target 39.123456,-77.123456 RIDGE</code>
-        <code>!location 39.123456 -77.123456 RALLY</code>
-        <code>!route 39.123456 -77.123456 ROUTE ALPHA</code>
-        <code>!lz 39.123456 -77.123456 LZ BRAVO</code>
-        <code>!medical 39.123456 -77.123456 AID</code>
-        <code>!threat 39.123456 -77.123456 42 THREAT</code>
-        <code>!gunshot 39.123456 -77.123456 42 GUNSHOT</code>
-        <code>!markdir 39.123456 -77.123456 42 MARK DIR</code>
+        <code>!target 34.298138,-83.825764 RIDGE</code>
+        <code>!location 34.298138 -83.825764 RALLY</code>
+        <code>!route 34.298138 -83.825764 ROUTE ALPHA</code>
+        <code>!lz 34.298138 -83.825764 LZ BRAVO</code>
+        <code>!medical 34.298138 -83.825764 AID</code>
+        <code>!threat 34.298138 -83.825764 42 THREAT</code>
+        <code>!gunshot 34.298138 -83.825764 42 GUNSHOT</code>
+        <code>!markdir 34.298138 -83.825764 42 MARK DIR</code>
         <code>CoT PLI 239.2.3.1:6969</code>
       </div>
     </section>
@@ -166,8 +172,8 @@
     {
       "id": "!1234abcd",
       "label": "ALPHA",
-      "lat": 39.123456,
-      "lon": -77.123456,
+      "lat": 34.298138,
+      "lon": -83.825764,
       "heading": 42,
       "accuracyYards": 12,
       "source": "meshtastic"
@@ -178,8 +184,8 @@
       "id": "target:ridge",
       "kind": "target",
       "label": "RIDGE",
-      "lat": 39.1242,
-      "lon": -77.1208
+      "lat": 34.298900,
+      "lon": -83.824900
     }
   ]
 }</code></pre>

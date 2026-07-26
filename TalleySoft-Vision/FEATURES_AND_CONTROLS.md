@@ -66,10 +66,12 @@ operations page.
   or better than 20 yards.
 - The IoT page is a browser dashboard for viewing headset tracks, team nodes,
   markers, targets, alerts, and tactical status.
-- The IoT page accepts realtime JSON over a local WebSocket bridge. The
-  intended path is GPS or Meshtastic position data into the headset/runtime
-  bridge, then browser map updates over `ws://127.0.0.1:8787` or another
-  operator-selected bridge URL.
+- The IoT page defaults to Historic Gainesville Square in Gainesville, GA and
+  accepts realtime JSON from multiple headset WebSocket endpoints on the same
+  LAN.
+- The intended path is GPS or Meshtastic position data into each headset
+  runtime, then browser map updates over `ws://HEADSET-IP:8787`.
+- Marker commands from the IoT page are sent to every connected headset.
 
 ## ATAK-Style Event Contract
 
@@ -101,5 +103,8 @@ as a TalleySoft Vision operations hub:
 - alert feed;
 - feature and controls reference;
 - import/export placeholders for future live telemetry snapshots.
-- realtime WebSocket telemetry snapshots and marker commands.
+- realtime WebSocket telemetry snapshots and marker commands from multiple
+  same-network headset endpoints.
+- no hosted cloud relay yet; off-network realtime headset push requires a
+  separate HTTPS/WSS relay service.
 

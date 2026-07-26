@@ -64,14 +64,14 @@ Send a Meshtastic text message containing a marker command and decimal
 coordinates. The marker appears on both the terrain map and compass:
 
 ```text
-!target 39.123456,-77.123456 RIDGE
-!location 39.123456 -77.123456 RALLY
-!route 39.123456 -77.123456 ROUTE ALPHA
-!lz 39.123456 -77.123456 LZ BRAVO
-!medical 39.123456 -77.123456 AID
-!threat 39.123456 -77.123456 42 THREAT
-!gunshot 39.123456 -77.123456 42 GUNSHOT
-!markdir 39.123456 -77.123456 42 MARK DIR
+!target 34.298138,-83.825764 RIDGE
+!location 34.298138 -83.825764 RALLY
+!route 34.298138 -83.825764 ROUTE ALPHA
+!lz 34.298138 -83.825764 LZ BRAVO
+!medical 34.298138 -83.825764 AID
+!threat 34.298138 -83.825764 42 THREAT
+!gunshot 34.298138 -83.825764 42 GUNSHOT
+!markdir 34.298138 -83.825764 42 MARK DIR
 ```
 
 Repeated `!route` messages with the same label form a route overlay. ATAK
@@ -82,8 +82,10 @@ The public TSV operations page is:
 `https://theroberttalley.github.io/TalleySoft-Vision/`
 
 For live Meshtastic GPS, headset tracks, markers, and browser-to-radio marker
-commands, attach the XIAO/Meshtastic radio to the headset and launch
-Talleysoft Vision. The headset app hosts telemetry on port `8787`:
+commands, attach the XIAO/Meshtastic radio to each headset and launch
+Talleysoft Vision. The public TSV operations page opens on Historic
+Gainesville Square by default and can connect to multiple same-network headset
+telemetry endpoints. Each headset app hosts telemetry on port `8787`:
 
 ```text
 ws://HEADSET-IP:8787
@@ -91,14 +93,15 @@ http://HEADSET-IP:8787/
 http://HEADSET-IP:8787/snapshot
 ```
 
-Open `http://HEADSET-IP:8787/` for the same-origin live map served by the
-headset. The public TSV operations page can still be used for static access and
-manual bridge entry, but the headset URL is the reliable live path when the
-radio is plugged into the headset. For bench testing over ADB, forward the
-headset telemetry port with `adb forward tcp:8787 tcp:8787` and use
-`http://127.0.0.1:8787/`. The older PC Python bridge remains available only for
-PC-attached radio testing. See `WEB_TELEMETRY_PROTOCOL.md` for the JSON and
-marker-command contract.
+Add every headset as `ws://HEADSET-IP:8787` in the public page Headsets panel.
+Marker commands are broadcast to every live headset connection. Open
+`http://HEADSET-IP:8787/` for the same-origin live map served by an individual
+headset when the browser blocks local WebSocket access from GitHub Pages. For
+bench testing over ADB, forward the headset telemetry port with
+`adb forward tcp:8787 tcp:8787` and use `http://127.0.0.1:8787/`. The older PC
+Python bridge remains available only for PC-attached radio testing. See
+`WEB_TELEMETRY_PROTOCOL.md` for the JSON and marker-command contract. A real
+off-network public live map requires a separate HTTPS/WSS relay service.
 
 See `quest\SphereCockpit\ARCHITECTURE.md` for the delivery order and latency
 rules.

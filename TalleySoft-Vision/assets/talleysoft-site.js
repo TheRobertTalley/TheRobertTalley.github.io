@@ -5,11 +5,12 @@
     return;
   }
 
-  const center = [39.123456, -77.123456];
+  const defaultCenter = [34.2981382, -83.8257640];
+  const defaultZoom = 17;
   const map = L.map(mapElement, {
     zoomControl: true,
     preferCanvas: true
-  }).setView(center, 15);
+  }).setView(defaultCenter, defaultZoom);
 
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19,
@@ -24,17 +25,21 @@
   };
 
   const state = {
-    socket: null,
-    connected: false,
     selectedKind: "target",
     latestNode: null,
+    didAutoCenter: false,
     nodes: new Map(),
-    markers: new Map()
+    markers: new Map(),
+    endpoints: [],
+    headsets: new Map()
   };
 
   const els = {
-    bridgeUrl: document.getElementById("bridge-url"),
-    connect: document.getElementById("connect-bridge"),
+    headsetUrl: document.getElementById("headset-url"),
+    addHeadset: document.getElementById("add-headset"),
+    connectAll: document.getElementById("connect-all-headsets"),
+    disconnectAll: document.getElementById("disconnect-all-headsets"),
+    headsetList: document.getElementById("headset-list"),
     socketStatus: document.getElementById("socket-status"),
     connectionPill: document.getElementById("connection-pill"),
     feedMode: document.getElementById("feed-mode"),
@@ -65,19 +70,9 @@
     route: "#4ddfea",
     lz: "#ffd447",
     medical: "#e4fff3",
-    location: "#41f19b"
+    location: "#41f19b",
+    tracker: "#ffd447"
   };
-
-  const savedBridgeUrl = window.localStorage
-    ? window.localStorage.getItem("tsvBridgeUrl")
-    : "";
-  const defaultBridgeUrl = savedBridgeUrl ||
-    (window.location.protocol === "http:"
-      ? `ws://${window.location.host}`
-      : "ws://192.168.1.61:8787");
-  if (els.bridgeUrl && !els.bridgeUrl.value) {
-    els.bridgeUrl.value = defaultBridgeUrl;
-  }
 
   function iconFor(kind, label) {
     const safeLabel = escapeHtml(label || kind.toUpperCase());
@@ -95,7 +90,6 @@
       case "target":
         return "◎";
       case "threat":
-        return "!";
       case "gunshot":
         return "!";
       case "direction":
@@ -142,6 +136,229 @@
   function normalizeNumber(value) {
     const number = Number(value);
     return Number.isFinite(number) ? number : null;
+  }
+
+  function normalizeEndpoint(value) {
+    let endpoint = String(value || "").trim();
+    if (!endpoint) {
+      return "";
+    }
+    if (!/^wss?:\/\//i.test(endpoint)) {
+      endpoint = `ws://${endpoint}`;
+    }
+    try {
+      const url = new URL(endpoint);
+      if (!url.port) {
+        url.port = "8787";
+      }
+      url.pathname = "/";
+      url.search = "";
+      url.hash = "";
+      return url.toString().replace(/\/$/, "");
+    } catch (error) {
+      return "";
+    }
+  }
+
+  function loadEndpoints() {
+    if (!window.localStorage) {
+      return [];
+    }
+    try {
+      const saved = JSON.parse(window.localStorage.getItem("tsvHeadsetEndpoints") || "[]");
+      if (Array.isArray(saved)) {
+        return saved.map(normalizeEndpoint).filter(Boolean);
+      }
+    } catch (error) {
+      addFeed("HEADSET", "Ignored invalid saved headset list");
+    }
+    return [];
+  }
+
+  function saveEndpoints() {
+    if (window.localStorage) {
+      window.localStorage.setItem("tsvHeadsetEndpoints", JSON.stringify(state.endpoints));
+    }
+  }
+
+  function endpointLabel(endpoint) {
+    try {
+      return new URL(endpoint).host;
+    } catch (error) {
+      return endpoint;
+    }
+  }
+
+  function connectedHeadsets() {
+    return Array.from(state.headsets.values())
+      .filter((headset) => headset.connected);
+  }
+
+  function setHeadsetStatus(endpoint, status, connected) {
+    const existing = state.headsets.get(endpoint) || {};
+    existing.status = status;
+    existing.connected = Boolean(connected);
+    existing.lastSeen = existing.connected ? Date.now() : existing.lastSeen;
+    state.headsets.set(endpoint, existing);
+    updateConnectionState();
+    renderHeadsetList();
+  }
+
+  function updateConnectionState() {
+    const connected = connectedHeadsets().length;
+    const total = state.endpoints.length;
+    const live = connected > 0;
+    els.socketStatus.textContent = live
+      ? `${connected}/${total} live`
+      : total > 0
+        ? "No headset live"
+        : "No headset";
+    els.connectionPill.textContent = live ? "Live" : "Offline";
+    els.feedMode.textContent = live ? "Live" : "Local";
+    els.socketStatus.classList.toggle("good", live);
+    els.socketStatus.classList.toggle("warn", !live);
+    els.connectionPill.classList.toggle("good", live);
+    els.connectionPill.classList.toggle("warn", !live);
+    els.metricRadio.textContent = live ? `${connected} live` : "Local";
+    els.metricHeadsets.textContent = String(connected);
+  }
+
+  function renderHeadsetList() {
+    if (!els.headsetList) {
+      return;
+    }
+    els.headsetList.replaceChildren();
+    if (state.endpoints.length === 0) {
+      const item = document.createElement("li");
+      item.textContent = "No headset endpoints saved.";
+      els.headsetList.append(item);
+      updateConnectionState();
+      return;
+    }
+    state.endpoints.forEach((endpoint) => {
+      const headset = state.headsets.get(endpoint) || { status: "Saved", connected: false };
+      const item = document.createElement("li");
+      const label = document.createElement("span");
+      const status = document.createElement("b");
+      const connect = document.createElement("button");
+      const remove = document.createElement("button");
+      label.textContent = endpointLabel(endpoint);
+      status.textContent = headset.status || "Saved";
+      status.className = headset.connected ? "good-text" : "warn-text";
+      connect.type = "button";
+      connect.textContent = headset.connected ? "Reconnect" : "Connect";
+      connect.addEventListener("click", () => connectHeadset(endpoint));
+      remove.type = "button";
+      remove.textContent = "Remove";
+      remove.addEventListener("click", () => removeHeadset(endpoint));
+      item.append(label, status, connect, remove);
+      els.headsetList.append(item);
+    });
+  }
+
+  function addHeadset() {
+    const endpoint = normalizeEndpoint(els.headsetUrl.value);
+    if (!endpoint) {
+      addFeed("HEADSET", "Enter a headset IP or WebSocket URL");
+      return;
+    }
+    if (!state.endpoints.includes(endpoint)) {
+      state.endpoints.push(endpoint);
+      saveEndpoints();
+      setHeadsetStatus(endpoint, "Saved", false);
+      addFeed("HEADSET", `Saved ${endpoint}`);
+    }
+    els.headsetUrl.value = "";
+    renderHeadsetList();
+  }
+
+  function removeHeadset(endpoint) {
+    disconnectHeadset(endpoint);
+    state.endpoints = state.endpoints.filter((item) => item !== endpoint);
+    state.headsets.delete(endpoint);
+    saveEndpoints();
+    renderHeadsetList();
+    updateConnectionState();
+    addFeed("HEADSET", `Removed ${endpointLabel(endpoint)}`);
+  }
+
+  function connectHeadset(endpoint) {
+    const normalized = normalizeEndpoint(endpoint);
+    if (!normalized) {
+      addFeed("HEADSET", "Invalid headset endpoint");
+      return;
+    }
+    if (!state.endpoints.includes(normalized)) {
+      state.endpoints.push(normalized);
+      saveEndpoints();
+    }
+    disconnectHeadset(normalized, true);
+    try {
+      const socket = new WebSocket(normalized);
+      state.headsets.set(normalized, {
+        socket,
+        status: "Opening",
+        connected: false,
+        lastSeen: 0
+      });
+      renderHeadsetList();
+      updateConnectionState();
+      socket.addEventListener("open", () => {
+        setHeadsetStatus(normalized, "Live", true);
+        addFeed("HEADSET", `Connected ${endpointLabel(normalized)}`);
+        socket.send(JSON.stringify({ type: "hello", client: "talleysoft-vision-web" }));
+      });
+      socket.addEventListener("message", (event) => {
+        try {
+          handleMessage(JSON.parse(event.data), normalized);
+          setHeadsetStatus(normalized, "Live", true);
+        } catch (error) {
+          addFeed("HEADSET", `Ignored malformed data from ${endpointLabel(normalized)}`);
+        }
+      });
+      socket.addEventListener("close", () => {
+        setHeadsetStatus(normalized, "Closed", false);
+        addFeed("HEADSET", `Closed ${endpointLabel(normalized)}`);
+      });
+      socket.addEventListener("error", () => {
+        setHeadsetStatus(normalized, "Error", false);
+        addFeed("HEADSET", `Error ${endpointLabel(normalized)}; try http://HEADSET-IP:8787/ directly`);
+      });
+    } catch (error) {
+      setHeadsetStatus(normalized, "Error", false);
+      addFeed("HEADSET", error.message);
+    }
+  }
+
+  function disconnectHeadset(endpoint, quiet) {
+    const headset = state.headsets.get(endpoint);
+    if (headset && headset.socket) {
+      headset.socket.close();
+    }
+    if (headset) {
+      headset.socket = null;
+      headset.connected = false;
+      headset.status = "Closed";
+      state.headsets.set(endpoint, headset);
+    }
+    if (!quiet) {
+      addFeed("HEADSET", `Disconnected ${endpointLabel(endpoint)}`);
+    }
+    renderHeadsetList();
+    updateConnectionState();
+  }
+
+  function connectAllHeadsets() {
+    if (state.endpoints.length === 0) {
+      addFeed("HEADSET", "Add at least one headset endpoint first");
+      return;
+    }
+    state.endpoints.forEach(connectHeadset);
+  }
+
+  function disconnectAllHeadsets() {
+    state.endpoints.forEach((endpoint) => disconnectHeadset(endpoint, true));
+    addFeed("HEADSET", "Disconnected all headset endpoints");
   }
 
   function markerId(marker) {
@@ -219,7 +436,7 @@
     layers.directions.set(marker.id, group);
   }
 
-  function updateNode(input) {
+  function updateNode(input, endpoint) {
     const lat = normalizeNumber(input.lat ?? input.latitude);
     const lon = normalizeNumber(input.lon ?? input.longitude);
     if (lat === null || lon === null) {
@@ -227,6 +444,7 @@
     }
     const id = String(input.id || input.nodeId || input.nodeNum || "local");
     const label = input.label || input.shortName || input.longName || id;
+    const now = Date.now();
     const node = {
       id,
       label,
@@ -234,32 +452,44 @@
       lon,
       heading: normalizeNumber(input.heading ?? input.groundTrackDeg),
       accuracyYards: normalizeNumber(input.accuracyYards),
-      source: input.source || "meshtastic"
+      source: input.source || "meshtastic",
+      endpoint: endpoint || "local",
+      updatedAt: now,
+      isLocal: Boolean(input.isLocal)
     };
+    const existing = state.nodes.get(id);
+    if (existing && existing.updatedAt > now) {
+      return;
+    }
     state.nodes.set(id, node);
     state.latestNode = node;
+    if (!state.didAutoCenter) {
+      map.setView([lat, lon], Math.max(map.getZoom(), 15));
+      state.didAutoCenter = true;
+    }
 
     let layer = layers.nodes.get(id);
+    const iconKind = node.isLocal ? "headset" : "tracker";
     if (!layer) {
-      layer = L.marker([lat, lon], { icon: iconFor("headset", label) })
+      layer = L.marker([lat, lon], { icon: iconFor(iconKind, label) })
         .addTo(map);
       layers.nodes.set(id, layer);
     }
     layer
       .setLatLng([lat, lon])
-      .setIcon(iconFor("headset", label))
+      .setIcon(iconFor(iconKind, label))
       .bindPopup(nodePopup(node));
     updateMetrics();
     updateReadouts();
   }
 
   function nodePopup(node) {
-    const heading = node.heading === null ? "--" : `${Math.round(node.heading)}°`;
+    const heading = node.heading === null ? "--" : `${Math.round(node.heading)} deg`;
     const accuracy = node.accuracyYards === null ? "--" : `${Math.round(node.accuracyYards)} yd`;
-    return `<strong>${escapeHtml(node.label)}</strong><br>Heading ${heading}<br>Accuracy ${accuracy}<br>${escapeHtml(node.source)}`;
+    return `<strong>${escapeHtml(node.label)}</strong><br>Heading ${heading}<br>Accuracy ${accuracy}<br>${escapeHtml(node.source)}<br>${escapeHtml(endpointLabel(node.endpoint))}`;
   }
 
-  function updateMarker(input) {
+  function updateMarker(input, endpoint) {
     const lat = normalizeNumber(input.lat ?? input.latitude);
     const lon = normalizeNumber(input.lon ?? input.longitude);
     if (lat === null || lon === null) {
@@ -267,6 +497,7 @@
     }
     const kind = String(input.kind || input.type || "location").toLowerCase();
     const label = input.label || kind.toUpperCase();
+    const ttl = normalizeNumber(input.ttlSeconds);
     const marker = {
       id: markerId({ ...input, kind, lat, lon, label }),
       kind,
@@ -275,10 +506,11 @@
       lon,
       heading: normalizeNumber(input.heading ?? input.headingDeg),
       coneDegrees: normalizeNumber(input.coneDegrees),
-      expiresAt: input.ttlSeconds
-        ? Date.now() + normalizeNumber(input.ttlSeconds) * 1000
+      expiresAt: ttl !== null
+        ? Date.now() + ttl * 1000
         : normalizeNumber(input.expiresAt),
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
+      endpoint: endpoint || "local"
     };
     state.markers.set(marker.id, marker);
 
@@ -301,8 +533,8 @@
   }
 
   function markerPopup(marker) {
-    const heading = marker.heading === null ? "" : `<br>Heading ${Math.round(marker.heading)}°`;
-    return `<strong>${escapeHtml(marker.label)}</strong><br>${escapeHtml(marker.kind.toUpperCase())}<br>${marker.lat.toFixed(6)}, ${marker.lon.toFixed(6)}${heading}`;
+    const heading = marker.heading === null ? "" : `<br>Heading ${Math.round(marker.heading)} deg`;
+    return `<strong>${escapeHtml(marker.label)}</strong><br>${escapeHtml(marker.kind.toUpperCase())}<br>${marker.lat.toFixed(6)}, ${marker.lon.toFixed(6)}${heading}<br>${escapeHtml(endpointLabel(marker.endpoint))}`;
   }
 
   function updateRoute(label) {
@@ -326,84 +558,32 @@
     route.setLatLngs(routePoints);
   }
 
-  function handleMessage(payload) {
+  function handleMessage(payload, endpoint) {
     if (!payload || typeof payload !== "object") {
       return;
     }
     if (payload.type === "snapshot") {
-      (payload.nodes || []).forEach(updateNode);
-      (payload.markers || []).forEach(updateMarker);
+      (payload.nodes || []).forEach((node) => updateNode(node, endpoint));
+      (payload.markers || []).forEach((marker) => updateMarker(marker, endpoint));
       (payload.messages || []).forEach((message) => {
         addFeed(message.kind || "MSG", message.text || JSON.stringify(message));
       });
-      if (payload.center && payload.center.lat && payload.center.lon) {
+      if (!state.didAutoCenter && payload.center && payload.center.lat && payload.center.lon) {
         map.setView([payload.center.lat, payload.center.lon], payload.center.zoom || map.getZoom());
+        state.didAutoCenter = true;
       }
       return;
     }
     if (payload.type === "node" || payload.type === "position") {
-      updateNode(payload);
+      updateNode(payload, endpoint);
       return;
     }
     if (payload.type === "marker" || payload.type === "target") {
-      updateMarker(payload);
+      updateMarker(payload, endpoint);
       return;
     }
     if (payload.type === "message") {
       addFeed(payload.kind || "MSG", payload.text || "Message received");
-    }
-  }
-
-  function setSocketState(connected, label) {
-    state.connected = connected;
-    els.socketStatus.textContent = label;
-    els.connectionPill.textContent = connected ? "Live" : "Offline";
-    els.feedMode.textContent = connected ? "Live" : "Local";
-    els.socketStatus.classList.toggle("good", connected);
-    els.socketStatus.classList.toggle("warn", !connected);
-    els.connectionPill.classList.toggle("good", connected);
-    els.connectionPill.classList.toggle("warn", !connected);
-    els.metricRadio.textContent = connected ? "Bridge" : "Local";
-  }
-
-  function connectBridge() {
-    const url = els.bridgeUrl.value.trim() || defaultBridgeUrl;
-    if (!url) {
-      return;
-    }
-    if (state.socket) {
-      state.socket.close();
-      state.socket = null;
-    }
-    try {
-      const socket = new WebSocket(url);
-      state.socket = socket;
-      setSocketState(false, "Opening");
-      socket.addEventListener("open", () => {
-        setSocketState(true, "Live");
-        if (window.localStorage) {
-          window.localStorage.setItem("tsvBridgeUrl", url);
-        }
-        addFeed("BRIDGE", `Connected to ${url}`);
-        socket.send(JSON.stringify({ type: "hello", client: "talleysoft-vision-web" }));
-      });
-      socket.addEventListener("message", (event) => {
-        try {
-          handleMessage(JSON.parse(event.data));
-        } catch (error) {
-          addFeed("BRIDGE", "Ignored malformed bridge message");
-        }
-      });
-      socket.addEventListener("close", () => {
-        setSocketState(false, "Closed");
-        addFeed("BRIDGE", "Realtime link closed");
-      });
-      socket.addEventListener("error", () => {
-        setSocketState(false, "Error");
-      });
-    } catch (error) {
-      setSocketState(false, "Error");
-      addFeed("BRIDGE", error.message);
     }
   }
 
@@ -434,23 +614,26 @@
     }
     updateMarker(marker);
     const command = buildCommand(kind, lat, lon, heading, label);
-    if (state.socket && state.connected) {
-      state.socket.send(JSON.stringify({
-        type: "marker_command",
-        command,
-        marker
-      }));
-      addFeed("SEND", command);
+    const liveHeadsets = connectedHeadsets();
+    if (liveHeadsets.length > 0) {
+      liveHeadsets.forEach((headset) => {
+        headset.socket.send(JSON.stringify({
+          type: "marker_command",
+          command,
+          marker
+        }));
+      });
+      addFeed("SEND", `${command} sent to ${liveHeadsets.length} headset(s)`);
     } else if (navigator.clipboard) {
       navigator.clipboard.writeText(command).catch(() => {});
-      addFeed("COPY", `${command} copied for Meshtastic`);
+      addFeed("COPY", `${command} copied; no headset connected`);
     } else {
       addFeed("COMMAND", command);
     }
   }
 
   function updateMetrics() {
-    els.metricHeadsets.textContent = String(state.nodes.size);
+    els.metricHeadsets.textContent = String(connectedHeadsets().length);
     els.metricMarkers.textContent = String(state.markers.size);
     els.metricTargets.textContent = String(
       Array.from(state.markers.values()).filter((marker) => marker.kind === "target").length
@@ -460,13 +643,17 @@
   function updateReadouts() {
     const node = state.latestNode;
     if (!node) {
+      els.gridReadout.textContent = `${defaultCenter[0].toFixed(5)}, ${defaultCenter[1].toFixed(5)}`;
+      els.gpsReadout.textContent = "GPS WAIT";
+      els.accuracyReadout.textContent = "ACC --";
+      els.meshReadout.textContent = "NO HEADSET";
       return;
     }
     els.gridReadout.textContent = `${node.lat.toFixed(5)}, ${node.lon.toFixed(5)}`;
     els.gpsReadout.textContent = "GPS OK";
     els.accuracyReadout.textContent =
       node.accuracyYards === null ? "ACC --" : `ACC ${Math.round(node.accuracyYards)} yd`;
-    els.meshReadout.textContent = node.source.toUpperCase();
+    els.meshReadout.textContent = endpointLabel(node.endpoint).toUpperCase();
   }
 
   function pruneExpiredMarkers() {
@@ -489,24 +676,24 @@
   function loadDemo() {
     handleMessage({
       type: "snapshot",
-      center: { lat: 39.123456, lon: -77.123456, zoom: 15 },
+      center: { lat: defaultCenter[0], lon: defaultCenter[1], zoom: defaultZoom },
       nodes: [
-        { id: "!alpha", label: "ALPHA", lat: 39.123456, lon: -77.123456, heading: 42, accuracyYards: 12 },
-        { id: "!bravo", label: "BRAVO", lat: 39.1218, lon: -77.1281, heading: 88, accuracyYards: 18 },
-        { id: "!charlie", label: "CHARLIE", lat: 39.1252, lon: -77.1198, heading: 254, accuracyYards: 9 }
+        { id: "!alpha", label: "ALPHA", lat: 34.298138, lon: -83.825764, heading: 42, accuracyYards: 12, isLocal: true },
+        { id: "!bravo", label: "BRAVO", lat: 34.297530, lon: -83.827040, heading: 88, accuracyYards: 18 },
+        { id: "!charlie", label: "CHARLIE", lat: 34.299140, lon: -83.824450, heading: 254, accuracyYards: 9 }
       ],
       markers: [
-        { id: "target:ridge", kind: "target", label: "RIDGE", lat: 39.1261, lon: -77.1179 },
-        { id: "threat:demo", kind: "threat", label: "THREAT", lat: 39.1249, lon: -77.1211, heading: 62, coneDegrees: 3, ttlSeconds: 5 },
-        { id: "gunshot:demo", kind: "gunshot", label: "GUNSHOT", lat: 39.1222, lon: -77.1250, heading: 312, ttlSeconds: 5 },
-        { id: "direction:demo", kind: "direction", label: "MARK DIR", lat: 39.1231, lon: -77.1238, heading: 118, ttlSeconds: 5 },
-        { id: "lz:bravo", kind: "lz", label: "LZ BRAVO", lat: 39.1199, lon: -77.1308 },
-        { id: "route:a:1", kind: "route", label: "ROUTE ALPHA", lat: 39.1211, lon: -77.1274 },
-        { id: "route:a:2", kind: "route", label: "ROUTE ALPHA", lat: 39.1228, lon: -77.1241 },
-        { id: "route:a:3", kind: "route", label: "ROUTE ALPHA", lat: 39.1242, lon: -77.1213 }
+        { id: "target:square", kind: "target", label: "SQUARE", lat: 34.298900, lon: -83.824900 },
+        { id: "threat:demo", kind: "threat", label: "THREAT", lat: 34.298650, lon: -83.825150, heading: 62, coneDegrees: 3, ttlSeconds: 5 },
+        { id: "gunshot:demo", kind: "gunshot", label: "GUNSHOT", lat: 34.297760, lon: -83.826400, heading: 312, ttlSeconds: 5 },
+        { id: "direction:demo", kind: "direction", label: "MARK DIR", lat: 34.298230, lon: -83.825950, heading: 118, ttlSeconds: 5 },
+        { id: "lz:bravo", kind: "lz", label: "LZ BRAVO", lat: 34.297040, lon: -83.827380 },
+        { id: "route:a:1", kind: "route", label: "ROUTE ALPHA", lat: 34.297530, lon: -83.827040 },
+        { id: "route:a:2", kind: "route", label: "ROUTE ALPHA", lat: 34.298100, lon: -83.825900 },
+        { id: "route:a:3", kind: "route", label: "ROUTE ALPHA", lat: 34.299140, lon: -83.824450 }
       ]
-    });
-    addFeed("DEMO", "Loaded local telemetry snapshot");
+    }, "demo");
+    addFeed("DEMO", "Loaded Gainesville Square telemetry snapshot");
   }
 
   document.querySelectorAll("[data-marker-kind]").forEach((button) => {
@@ -530,8 +717,8 @@
           map.setView([state.latestNode.lat, state.latestNode.lon], Math.max(map.getZoom(), 15));
           addFeed("CENTER", `Centered on ${state.latestNode.label}`);
         } else {
-          map.setView(center, 15);
-          addFeed("CENTER", "Centered on default operations area");
+          map.setView(defaultCenter, defaultZoom);
+          addFeed("CENTER", "Centered on Gainesville Square");
         }
       }
     });
@@ -557,10 +744,21 @@
     addFeed("POINT", "Marker coordinates set from map click");
   });
 
-  els.connect.addEventListener("click", connectBridge);
+  els.addHeadset.addEventListener("click", addHeadset);
+  els.headsetUrl.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      addHeadset();
+    }
+  });
+  els.connectAll.addEventListener("click", connectAllHeadsets);
+  els.disconnectAll.addEventListener("click", disconnectAllHeadsets);
   els.loadDemo.addEventListener("click", loadDemo);
 
-  setSocketState(false, "Closed");
-  addFeed("READY", "Connect to the headset telemetry address for live map data");
+  state.endpoints = Array.from(new Set(loadEndpoints()));
+  renderHeadsetList();
+  updateConnectionState();
+  updateReadouts();
+  addFeed("READY", "Gainesville Square loaded; add each headset endpoint for live map data");
   window.setInterval(pruneExpiredMarkers, 1000);
 })();

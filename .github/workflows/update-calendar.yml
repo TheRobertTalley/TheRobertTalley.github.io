@@ -1,0 +1,31 @@
+name: Update public calendar data
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+  push:
+    paths:
+      - "scripts/build-calendar.js"
+      - ".github/workflows/update-calendar.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  update-calendar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build calendar data
+        env:
+          CALENDAR_ICS_URL: ${{ vars.CALENDAR_ICS_URL || secrets.CALENDAR_ICS_URL }}
+        run: node scripts/build-calendar.js
+
+      - name: Commit calendar data
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Update public calendar data
+          file_pattern: calendar/calendar-events.json

@@ -1,1 +1,121 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TheRobertTalley Pages</title></head><body><h1>TheRobertTalley Pages</h1><p><a href="TalleySoft-Vision/">TalleySoft Vision IoT Ops</a></p></body></html>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>TheRobertTalley Pages</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #08090b;
+        --panel: #11151b;
+        --text: #f7f2e8;
+        --muted: #c4cad4;
+        --line: rgba(255, 255, 255, 0.16);
+        --teal: #5ce0c1;
+        --amber: #f2c76e;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--text);
+        font-family: Inter, "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      }
+
+      main {
+        width: min(920px, calc(100vw - 32px));
+        margin: 0 auto;
+        padding: 56px 0;
+      }
+
+      h1 {
+        margin: 0;
+        color: var(--amber);
+        font-size: clamp(36px, 6vw, 64px);
+        line-height: 1;
+      }
+
+      p {
+        color: var(--muted);
+        font-size: 18px;
+        line-height: 1.5;
+      }
+
+      a {
+        color: var(--teal);
+      }
+
+      .links,
+      .donation {
+        margin-top: 28px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        padding: 22px;
+      }
+
+      .links {
+        display: grid;
+        gap: 14px;
+      }
+
+      .links a {
+        font-size: 22px;
+        font-weight: 800;
+        text-decoration: none;
+      }
+
+      .donation {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+      }
+
+      .donation img {
+        width: 96px;
+        height: 96px;
+        padding: 4px;
+        border-radius: 4px;
+        background: #fff;
+      }
+
+      code {
+        color: var(--text);
+        overflow-wrap: anywhere;
+      }
+
+      @media (max-width: 620px) {
+        .donation {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>TheRobertTalley Pages</h1>
+      <p>Public static pages and display projects hosted from GitHub Pages.</p>
+
+      <section class="links" aria-label="Pages">
+        <a href="./calendar/">Smart Calendar Display</a>
+        <a href="./r/">Short calendar link</a>
+        <a href="./TalleySoft-Vision/">TalleySoft Vision IoT Ops</a>
+      </section>
+
+      <section class="donation" aria-label="Buy me a root beer">
+        <img src="./calendar/assets/root-beer-btc-qr.png" alt="">
+        <div>
+          <h2>Buy Me a Root Beer</h2>
+          <p>BTC: <code>bc1q3anz5e7uflnwte4nr5ku836h98dgunwysz203j</code></p>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

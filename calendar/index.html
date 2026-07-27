@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#08090b">
+    <meta http-equiv="refresh" content="3600">
+    <title>Smart Calendar Display</title>
+    <meta
+      name="description"
+      content="A public smart display with clock, weather, and calendar."
+    >
+    <link rel="stylesheet" href="./styles.css?v=20260727-talleyhost">
+  </head>
+  <body>
+    <main class="screen" id="screen">
+      <section class="clock-panel" aria-label="Current time">
+        <p class="location" id="locationLabel">Home</p>
+        <h1 id="clock">--:--</h1>
+        <p class="date-line" id="dateLine">Loading date</p>
+      </section>
+
+      <section class="weather-panel" aria-label="Weather forecast" aria-live="polite">
+        <div class="weather-summary">
+          <p class="panel-label">Weather</p>
+          <h2 id="weatherLabel">Loading forecast</h2>
+        </div>
+        <p class="temperature" id="weatherTemp">--</p>
+        <p class="weather-meta" id="weatherMeta">Connecting to public weather data</p>
+        <div class="forecast-list" id="forecastList"></div>
+      </section>
+
+      <section class="calendar-panel" aria-label="Rolling work-week calendar">
+        <div class="month-grid" id="eventList" role="grid" aria-label="Rolling Monday through Friday calendar"></div>
+      </section>
+
+      <footer class="status-bar">
+        <span id="refreshStatus">Starting dashboard</span>
+        <a class="calendar-link" href="https://github.com/TheRobertTalley/TheRobertTalley.github.io" aria-label="Get your calendar at the public GitHub repository">
+          <span>Get your calendar at:</span>
+          <img class="footer-qr" src="./assets/repo-qr.png" alt="">
+        </a>
+      </footer>
+    </main>
+
+    <script src="./dashboard.config.js?v=20260727-talleyhost"></script>
+    <script src="./app.js?v=20260727-talleyhost"></script>
+  </body>
+</html>

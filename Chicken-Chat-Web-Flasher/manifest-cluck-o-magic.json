@@ -1,0 +1,16 @@
+{
+  "name": "Chicken Chat Cluck-o-Magic",
+  "version": "2026.07.31",
+  "new_install_skip_erase": false,
+  "builds": [
+    {
+      "chipFamily": "ESP32",
+      "parts": [
+        { "path": "firmware/cluck-o-magic/bootloader.bin", "offset": 4096 },
+        { "path": "firmware/cluck-o-magic/partitions.bin", "offset": 32768 },
+        { "path": "firmware/cluck-o-magic/boot_app0.bin", "offset": 57344 },
+        { "path": "firmware/cluck-o-magic/firmware.bin", "offset": 65536 }
+      ]
+    }
+  ]
+}

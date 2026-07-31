@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tub Commander Web Flasher</title>
+  <meta name="description" content="Flash Tub Commander remote, controller, and test controller firmware from the browser.">
+  <link rel="stylesheet" href="../assets/iot-flasher.css">
+  <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="../">
+      <span class="brand-mark">TC</span>
+      <span>
+        <strong>Tub Commander</strong>
+        <small>Web Flasher</small>
+      </span>
+    </a>
+    <nav aria-label="Primary">
+      <a href="../Chicken-Chat-Web-Flasher/">Chicken Chat</a>
+      <a href="../TalleySoft-Vision/">TalleySoft Vision</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">USB browser flashing</p>
+        <h1>Tub Commander Web Flasher</h1>
+        <p class="lead">
+          Flash the touch remote, production controller, or XIAO test controller from Chrome or Edge using a USB data cable.
+        </p>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="device-shell">
+          <div class="device-screen">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="content">
+      <div class="flash-grid" aria-label="Tub Commander firmware targets">
+        <article class="flash-card">
+          <div class="card-top">
+            <div>
+              <h2>Touch Remote</h2>
+              <p class="muted">Waveshare ESP32-S3 Touch LCD 4.3B remote firmware.</p>
+            </div>
+            <span class="chip">ESP32-S3</span>
+          </div>
+          <div class="install-area">
+            <esp-web-install-button manifest="manifest-remote.json"></esp-web-install-button>
+          </div>
+          <ul class="spec-list">
+            <li><span>Build</span><b>tub-remote</b></li>
+            <li><span>Flash</span><b>16 MB</b></li>
+            <li><span>Mode</span><b>DIO 80 MHz</b></li>
+          </ul>
+        </article>
+
+        <article class="flash-card">
+          <div class="card-top">
+            <div>
+              <h2>Controller</h2>
+              <p class="muted">Production Tub Commander relay controller firmware.</p>
+            </div>
+            <span class="chip">ESP32</span>
+          </div>
+          <div class="install-area">
+            <esp-web-install-button manifest="manifest-controller.json"></esp-web-install-button>
+          </div>
+          <ul class="spec-list">
+            <li><span>Build</span><b>esp-wrover-kit</b></li>
+            <li><span>Flash</span><b>4 MB</b></li>
+            <li><span>Mode</span><b>DIO 40 MHz</b></li>
+          </ul>
+        </article>
+
+        <article class="flash-card">
+          <div class="card-top">
+            <div>
+              <h2>Test Controller</h2>
+              <p class="muted">Seeed XIAO ESP32-C3 bench/test controller firmware.</p>
+            </div>
+            <span class="chip">ESP32-C3</span>
+          </div>
+          <div class="install-area">
+            <esp-web-install-button manifest="manifest-test-controller.json"></esp-web-install-button>
+          </div>
+          <ul class="spec-list">
+            <li><span>Build</span><b>xiao-esp32c3-test-controller</b></li>
+            <li><span>Flash</span><b>4 MB</b></li>
+            <li><span>Mode</span><b>DIO 80 MHz</b></li>
+          </ul>
+        </article>
+      </div>
+
+      <section class="note-band">
+        <h2>Flash Steps</h2>
+        <ol>
+          <li>Use Chrome or Edge on a desktop computer.</li>
+          <li>Plug in the device with a USB data cable.</li>
+          <li>Choose the matching product above and allow browser serial access.</li>
+        </ol>
+      </section>
+    </section>
+  </main>
+</body>
+</html>

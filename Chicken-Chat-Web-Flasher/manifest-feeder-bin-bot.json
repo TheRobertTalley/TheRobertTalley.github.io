@@ -1,0 +1,16 @@
+{
+  "name": "Chicken Chat Feeder Bin Bot",
+  "version": "2026.07.31",
+  "new_install_skip_erase": false,
+  "builds": [
+    {
+      "chipFamily": "ESP32",
+      "parts": [
+        { "path": "firmware/feeder-bin-bot/bootloader.bin", "offset": 4096 },
+        { "path": "firmware/feeder-bin-bot/partitions.bin", "offset": 32768 },
+        { "path": "firmware/feeder-bin-bot/boot_app0.bin", "offset": 57344 },
+        { "path": "firmware/feeder-bin-bot/firmware.bin", "offset": 65536 }
+      ]
+    }
+  ]
+}

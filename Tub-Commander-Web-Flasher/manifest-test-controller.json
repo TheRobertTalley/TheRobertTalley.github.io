@@ -1,0 +1,16 @@
+{
+  "name": "Tub Commander Test Controller",
+  "version": "2026.07.31",
+  "new_install_skip_erase": false,
+  "builds": [
+    {
+      "chipFamily": "ESP32-C3",
+      "parts": [
+        { "path": "firmware/test-controller/bootloader.bin", "offset": 0 },
+        { "path": "firmware/test-controller/partitions.bin", "offset": 32768 },
+        { "path": "firmware/test-controller/boot_app0.bin", "offset": 57344 },
+        { "path": "firmware/test-controller/firmware.bin", "offset": 65536 }
+      ]
+    }
+  ]
+}

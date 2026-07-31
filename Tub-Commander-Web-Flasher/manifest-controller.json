@@ -1,0 +1,16 @@
+{
+  "name": "Tub Commander Controller",
+  "version": "2026.07.31",
+  "new_install_skip_erase": false,
+  "builds": [
+    {
+      "chipFamily": "ESP32",
+      "parts": [
+        { "path": "firmware/controller/bootloader.bin", "offset": 4096 },
+        { "path": "firmware/controller/partitions.bin", "offset": 32768 },
+        { "path": "firmware/controller/boot_app0.bin", "offset": 57344 },
+        { "path": "firmware/controller/firmware.bin", "offset": 65536 }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chicken Chat Web Flasher</title>
+  <meta name="description" content="Flash Chicken Chat product firmware from the browser.">
+  <link rel="stylesheet" href="../assets/iot-flasher.css">
+  <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="../">
+      <span class="brand-mark">CC</span>
+      <span>
+        <strong>Chicken Chat</strong>
+        <small>Web Flasher</small>
+      </span>
+    </a>
+    <nav aria-label="Primary">
+      <a href="../Tub-Commander-Web-Flasher/">Tub Commander</a>
+      <a href="../TalleySoft-Vision/">TalleySoft Vision</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Farm IoT flashing</p>
+        <h1>Chicken Chat Web Flasher</h1>
+        <p class="lead">
+          Flash Chicken Chat product firmware from Chrome or Edge using browser serial access.
+        </p>
+      </div>
+      <div class="logo-panel">
+        <img src="assets/chicken-chat-logo.png" alt="Chicken Chat logo">
+      </div>
+    </section>
+
+    <section class="content">
+      <div class="flash-grid" aria-label="Chicken Chat firmware targets">
+        <article class="flash-card">
+          <div class="card-top">
+            <div>
+              <h2>Feeder Bin Bot</h2>
+              <p class="muted">ACEBOTT ESP32 Max prototype shield firmware.</p>
+            </div>
+            <span class="chip">ESP32</span>
+          </div>
+          <div class="install-area">
+            <esp-web-install-button manifest="manifest-feeder-bin-bot.json"></esp-web-install-button>
+          </div>
+          <ul class="spec-list">
+            <li><span>Build</span><b>acebot-esp32-max-v1_0-prototype-shield</b></li>
+            <li><span>Flash</span><b>4 MB</b></li>
+            <li><span>Mode</span><b>DIO 40 MHz</b></li>
+          </ul>
+        </article>
+
+        <article class="flash-card">
+          <div class="card-top">
+            <div>
+              <h2>Cluck-o-Magic</h2>
+              <p class="muted">Bin shaker prototype shield firmware.</p>
+            </div>
+            <span class="chip">ESP32</span>
+          </div>
+          <div class="install-area">
+            <esp-web-install-button manifest="manifest-cluck-o-magic.json"></esp-web-install-button>
+          </div>
+          <ul class="spec-list">
+            <li><span>Build</span><b>cluck-o-magic-prototype-shield</b></li>
+            <li><span>Flash</span><b>4 MB</b></li>
+            <li><span>Mode</span><b>DIO 40 MHz</b></li>
+          </ul>
+        </article>
+      </div>
+
+      <section class="note-band">
+        <h2>Flash Steps</h2>
+        <ol>
+          <li>Use Chrome or Edge on a desktop computer.</li>
+          <li>Plug in the product with a USB data cable.</li>
+          <li>Select the matching firmware and allow browser serial access.</li>
+        </ol>
+      </section>
+    </section>
+  </main>
+</body>
+</html>

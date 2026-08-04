@@ -44,7 +44,8 @@
     markers: new Map(),
     endpoints: [],
     headsets: new Map(),
-    pollers: new Map()
+    pollers: new Map(),
+    endpointSnapshots: new Map()
   };
 
   const els = {
@@ -88,11 +89,11 @@
     browser: "#4ddfea"
   };
 
-  function iconFor(kind, label) {
+  function iconFor(kind, label, selected = false) {
     const safeLabel = escapeHtml(label || kind.toUpperCase());
     const color = colors[kind] || colors.location;
     return L.divIcon({
-      className: "tsv-marker",
+      className: `tsv-marker${selected ? " is-selected" : ""}`,
       html: `<span style="--marker-color:${color}">${symbolFor(kind)}</span><b>${safeLabel}</b>`,
       iconSize: [90, 30],
       iconAnchor: [12, 15]
@@ -468,6 +469,7 @@
 
   function setHeadsetStatus(endpoint, status, connected) {
     const existing = state.headsets.get(endpoint) || {};
+    existing.endpoint = endpoint;
     existing.status = status;
     existing.connected = Boolean(connected);
     existing.lastSeen = existing.connected ? Date.now() : existing.lastSeen;
@@ -548,6 +550,7 @@
     disconnectHeadset(endpoint);
     state.endpoints = state.endpoints.filter((item) => item !== endpoint);
     state.headsets.delete(endpoint);
+    state.endpointSnapshots.delete(endpoint);
     stopSnapshotPolling(endpoint);
     saveEndpoints();
     renderHeadsetList();
@@ -569,6 +572,7 @@
     try {
       const socket = new WebSocket(normalized);
       state.headsets.set(normalized, {
+        endpoint: normalized,
         socket,
         status: "Opening",
         connected: false,
@@ -656,7 +660,17 @@
       return;
     }
 
+    const poller = {
+      timer: null,
+      inFlight: false,
+      poll: null
+    };
+
     const poll = async () => {
+      if (poller.inFlight) {
+        return;
+      }
+      poller.inFlight = true;
       try {
         const response = await fetch(snapshotUrl, { cache: "no-store" });
         if (!response.ok) {
@@ -666,10 +680,14 @@
         setHeadsetStatus(endpoint, "Live snapshot", true);
       } catch (error) {
         setHeadsetStatus(endpoint, "No snapshot", false);
+      } finally {
+        poller.inFlight = false;
       }
     };
 
-    state.pollers.set(endpoint, window.setInterval(poll, 2000));
+    poller.poll = poll;
+    poller.timer = window.setInterval(poll, 1000);
+    state.pollers.set(endpoint, poller);
     poll();
   }
 
@@ -678,8 +696,37 @@
     if (!poller) {
       return;
     }
-    window.clearInterval(poller);
+    window.clearInterval(poller.timer);
     state.pollers.delete(endpoint);
+  }
+
+  function requestSnapshotSoon(endpoint, delay = 160) {
+    const poller = state.pollers.get(endpoint);
+    if (poller && typeof poller.poll === "function") {
+      window.setTimeout(poller.poll, delay);
+      return;
+    }
+    const snapshotUrl = snapshotUrlForEndpoint(endpoint);
+    if (!snapshotUrl || !canAttemptHttpSnapshot(snapshotUrl)) {
+      return;
+    }
+    window.setTimeout(async () => {
+      try {
+        const response = await fetch(snapshotUrl, { cache: "no-store" });
+        if (response.ok) {
+          handleMessage(await response.json(), endpoint);
+          setHeadsetStatus(endpoint, "Live snapshot", true);
+        }
+      } catch (error) {
+        setHeadsetStatus(endpoint, "No snapshot", false);
+      }
+    }, delay);
+  }
+
+  function requestAllSnapshotsSoon(delay = 160) {
+    state.endpoints.forEach((endpoint) => {
+      requestSnapshotSoon(endpoint, delay);
+    });
   }
 
   function disconnectHeadset(endpoint, quiet) {
@@ -856,6 +903,101 @@
     return `<strong>${escapeHtml(node.label)}</strong><br>Heading ${heading}<br>Accuracy ${accuracy}<br>${escapeHtml(node.source)}<br>${escapeHtml(endpointLabel(node.endpoint))}`;
   }
 
+  function nodeKeyFromInput(input) {
+    const lat = normalizeNumber(input.lat ?? input.latitude);
+    const lon = normalizeNumber(input.lon ?? input.longitude);
+    if (lat === null || lon === null) {
+      return "";
+    }
+    return String(input.id || input.nodeId || input.nodeNum || "local");
+  }
+
+  function markerKeyFromInput(input) {
+    if (String(input.source || "").toLowerCase() === "headset-trail") {
+      return "";
+    }
+    const lat = normalizeNumber(input.lat ?? input.latitude);
+    const lon = normalizeNumber(input.lon ?? input.longitude);
+    if (lat === null || lon === null) {
+      return "";
+    }
+    const kind = String(input.kind || input.type || "location").toLowerCase();
+    const label = input.label || kind.toUpperCase();
+    return markerId({ ...input, kind, lat, lon, label });
+  }
+
+  function removeNode(id) {
+    state.nodes.delete(id);
+    const layer = layers.nodes.get(id);
+    if (layer) {
+      layer.remove();
+      layers.nodes.delete(id);
+    }
+    if (state.latestNode && state.latestNode.id === id) {
+      state.latestNode = Array.from(state.nodes.values()).find((node) => node.isLocal) ||
+        Array.from(state.nodes.values())[0] ||
+        null;
+    }
+  }
+
+  function removeMarker(id) {
+    state.markers.delete(id);
+    const markerLayer = layers.markers.get(id);
+    if (markerLayer) {
+      markerLayer.remove();
+      layers.markers.delete(id);
+    }
+    clearDirection(id);
+  }
+
+  function rebuildRoutes() {
+    layers.routes.forEach((route) => route.remove());
+    layers.routes.clear();
+    const routeLabels = new Set(
+      Array.from(state.markers.values())
+        .filter((marker) => marker.kind === "route")
+        .map((marker) => marker.label)
+    );
+    routeLabels.forEach(updateRoute);
+  }
+
+  function reconcileSnapshot(endpoint, nodeIds, markerIds) {
+    if (!endpoint) {
+      return;
+    }
+    const previous = state.endpointSnapshots.get(endpoint) || {
+      nodes: new Set(),
+      markers: new Set()
+    };
+    previous.nodes.forEach((id) => {
+      if (!nodeIds.has(id)) {
+        const node = state.nodes.get(id);
+        if (node && node.endpoint === endpoint) {
+          removeNode(id);
+        }
+      }
+    });
+    let removedMarkers = false;
+    previous.markers.forEach((id) => {
+      if (!markerIds.has(id)) {
+        const marker = state.markers.get(id);
+        if (marker && marker.endpoint === endpoint) {
+          removeMarker(id);
+          removedMarkers = true;
+        }
+      }
+    });
+    state.endpointSnapshots.set(endpoint, {
+      nodes: new Set(nodeIds),
+      markers: new Set(markerIds)
+    });
+    if (removedMarkers) {
+      rebuildRoutes();
+    }
+    updateMetrics();
+    updateReadouts();
+  }
+
   function updateMarker(input, endpoint) {
     if (String(input.source || "").toLowerCase() === "headset-trail") {
       return;
@@ -880,19 +1022,22 @@
         ? Date.now() + ttl * 1000
         : normalizeNumber(input.expiresAt),
       updatedAt: Date.now(),
-      endpoint: endpoint || "local"
+      endpoint: endpoint || "local",
+      selected: Boolean(input.selected)
     };
     const existing = state.markers.get(marker.id);
     state.markers.set(marker.id, marker);
 
     let layer = layers.markers.get(marker.id);
     if (!layer) {
-      layer = L.marker([lat, lon], { icon: iconFor(kind, label) }).addTo(map);
+      layer = L.marker([lat, lon], {
+        icon: iconFor(kind, label, marker.selected)
+      }).addTo(map);
       layers.markers.set(marker.id, layer);
     }
     layer
       .setLatLng([lat, lon])
-      .setIcon(iconFor(kind, label))
+      .setIcon(iconFor(kind, label, marker.selected))
       .bindPopup(markerPopup(marker));
 
     updateDirectionOverlay(marker);
@@ -911,7 +1056,8 @@
 
   function markerPopup(marker) {
     const heading = marker.heading === null ? "" : `<br>Heading ${Math.round(marker.heading)} deg`;
-    return `<strong>${escapeHtml(marker.label)}</strong><br>${escapeHtml(marker.kind.toUpperCase())}<br>${marker.lat.toFixed(6)}, ${marker.lon.toFixed(6)}${heading}<br>${escapeHtml(endpointLabel(marker.endpoint))}`;
+    const selected = marker.selected ? "<br>Selected for edit/delete" : "";
+    return `<strong>${escapeHtml(marker.label)}</strong><br>${escapeHtml(marker.kind.toUpperCase())}<br>${marker.lat.toFixed(6)}, ${marker.lon.toFixed(6)}${heading}${selected}<br>${escapeHtml(endpointLabel(marker.endpoint))}`;
   }
 
   function updateRoute(label) {
@@ -959,8 +1105,23 @@
       return;
     }
     if (payload.type === "snapshot") {
-      (payload.nodes || []).forEach((node) => updateNode(node, endpoint));
-      (payload.markers || []).forEach((marker) => updateMarker(marker, endpoint));
+      const nodeIds = new Set();
+      const markerIds = new Set();
+      (payload.nodes || []).forEach((node) => {
+        const id = nodeKeyFromInput(node);
+        if (id) {
+          nodeIds.add(id);
+        }
+        updateNode(node, endpoint);
+      });
+      (payload.markers || []).forEach((marker) => {
+        const id = markerKeyFromInput(marker);
+        if (id) {
+          markerIds.add(id);
+        }
+        updateMarker(marker, endpoint);
+      });
+      reconcileSnapshot(endpoint, nodeIds, markerIds);
       (payload.messages || []).forEach((message) => {
         addFeed(message.kind || "MSG", message.text || JSON.stringify(message));
       });
@@ -1022,6 +1183,8 @@
           command,
           marker
         }));
+        requestSnapshotSoon(headset.endpoint, 250);
+        requestSnapshotSoon(headset.endpoint, 850);
       });
       addFeed("SEND", `${command} sent to ${liveHeadsets.length} headset(s)`);
     } else if (navigator.clipboard) {
@@ -1055,6 +1218,8 @@
         type: "control",
         control
       }));
+      requestSnapshotSoon(headset.endpoint, 250);
+      requestSnapshotSoon(headset.endpoint, 850);
     });
 
     let httpSent = 0;
@@ -1067,6 +1232,8 @@
         const response = await fetch(controlUrl, { cache: "no-store" });
         if (response.ok) {
           httpSent++;
+          requestSnapshotSoon(endpoint, 250);
+          requestSnapshotSoon(endpoint, 850);
         }
       } catch (error) {
         addFeed("CONTROL", `${endpointLabel(endpoint)} blocked ${control}`);
@@ -1076,6 +1243,9 @@
     addFeed(
       "CONTROL",
       `${control} sent to ${liveHeadsets.length + httpSent} headset(s)`);
+    if (liveHeadsets.length + httpSent > 0) {
+      requestAllSnapshotsSoon(1200);
+    }
   }
 
   function updateMetrics() {
@@ -1110,14 +1280,9 @@
       if (!marker.expiresAt || marker.expiresAt > now) {
         return;
       }
-      state.markers.delete(marker.id);
-      const markerLayer = layers.markers.get(marker.id);
-      if (markerLayer) {
-        markerLayer.remove();
-        layers.markers.delete(marker.id);
-      }
-      clearDirection(marker.id);
+      removeMarker(marker.id);
     });
+    rebuildRoutes();
     updateMetrics();
   }
 

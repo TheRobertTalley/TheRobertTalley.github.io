@@ -223,6 +223,11 @@ h2 {
   font-weight: 800;
 }
 
+.tsv-marker.is-selected span {
+  box-shadow: 0 0 0 3px rgba(228, 255, 243, 0.45);
+  background: rgba(65, 241, 155, 0.22);
+}
+
 .tsv-marker b {
   border: 1px solid rgba(228, 255, 243, 0.24);
   border-radius: 4px;
@@ -230,6 +235,12 @@ h2 {
   padding: 0.14rem 0.32rem;
   font-size: 0.72rem;
   font-weight: 700;
+}
+
+.tsv-marker.is-selected b {
+  border-color: rgba(228, 255, 243, 0.72);
+  background: rgba(5, 10, 8, 0.9);
+  color: var(--green);
 }
 
 .map-readout {

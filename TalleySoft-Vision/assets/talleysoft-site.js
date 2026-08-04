@@ -332,10 +332,10 @@
 
     async function poll() {
       try {
-        const response = await fetch(`${endpoint}/snapshot`, {
-          cache: "no-store",
-          targetAddressSpace: "local"
-        });
+        const snapshotUrl = `${endpoint}/snapshot`;
+        const response = await fetch(
+          snapshotUrl,
+          localFetchOptions(snapshotUrl));
         snapshot = await response.json();
         draw();
         fallbackFeed(
@@ -642,25 +642,45 @@
     try {
       const target = new URL(url);
       const host = target.hostname.toLowerCase();
-    return window.location.protocol !== "https:" ||
-      isPrivateNetworkHost(host) ||
-      host === window.location.hostname.toLowerCase();
+      return window.location.protocol !== "https:" ||
+        Boolean(targetAddressSpaceForHost(host)) ||
+        host === window.location.hostname.toLowerCase();
     } catch (error) {
       return false;
     }
   }
 
-  function isPrivateNetworkHost(host) {
-    if (host === "localhost" || host === "::1") {
-      return true;
+  function targetAddressSpaceForHost(host) {
+    if (host === "localhost" ||
+        host === "::1" ||
+        host.startsWith("127.")) {
+      return "loopback";
     }
+    return isPrivateNetworkHost(host) ? "local" : "";
+  }
+
+  function localFetchOptions(url) {
+    const options = { cache: "no-store" };
+    try {
+      const target = new URL(url);
+      const addressSpace = targetAddressSpaceForHost(
+        target.hostname.toLowerCase());
+      if (addressSpace) {
+        options.targetAddressSpace = addressSpace;
+      }
+    } catch (error) {
+      // Leave the normal fetch options in place for malformed URLs.
+    }
+    return options;
+  }
+
+  function isPrivateNetworkHost(host) {
     const parts = host.split(".").map((part) => Number(part));
     if (parts.length !== 4 || parts.some((part) => !Number.isInteger(part))) {
       return false;
     }
     const [a, b] = parts;
     return a === 10 ||
-      a === 127 ||
       (a === 169 && b === 254) ||
       (a === 172 && b >= 16 && b <= 31) ||
       (a === 192 && b === 168);
@@ -687,10 +707,9 @@
       }
       poller.inFlight = true;
       try {
-        const response = await fetch(snapshotUrl, {
-          cache: "no-store",
-          targetAddressSpace: "local"
-        });
+        const response = await fetch(
+          snapshotUrl,
+          localFetchOptions(snapshotUrl));
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
         }
@@ -730,10 +749,9 @@
     }
     window.setTimeout(async () => {
       try {
-        const response = await fetch(snapshotUrl, {
-          cache: "no-store",
-          targetAddressSpace: "local"
-        });
+        const response = await fetch(
+          snapshotUrl,
+          localFetchOptions(snapshotUrl));
         if (response.ok) {
           handleMessage(await response.json(), endpoint);
           setHeadsetStatus(endpoint, "Live snapshot", true);
@@ -1250,10 +1268,9 @@
         continue;
       }
       try {
-        const response = await fetch(controlUrl, {
-          cache: "no-store",
-          targetAddressSpace: "local"
-        });
+        const response = await fetch(
+          controlUrl,
+          localFetchOptions(controlUrl));
         if (response.ok) {
           httpSent++;
           requestSnapshotSoon(endpoint, 250);

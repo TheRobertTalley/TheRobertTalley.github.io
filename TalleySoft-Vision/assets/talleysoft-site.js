@@ -1,7 +1,11 @@
 (function () {
   const mapElement = document.getElementById("ops-map");
   const feed = document.getElementById("event-feed");
-  if (!mapElement || !window.L) {
+  if (!mapElement) {
+    return;
+  }
+  if (!window.L) {
+    startOfflineMapFallback(mapElement, feed);
     return;
   }
 
@@ -24,14 +28,23 @@
     directions: new Map()
   };
 
+  const defaultTelemetryEndpoints = [
+    "ws://127.0.0.1:8787",
+    "ws://localhost:8787",
+    "ws://192.168.1.61:8787"
+  ];
+
   const state = {
     selectedKind: "target",
     latestNode: null,
     didAutoCenter: false,
+    didBrowserCenter: false,
+    browserLocationErrorShown: false,
     nodes: new Map(),
     markers: new Map(),
     endpoints: [],
-    headsets: new Map()
+    headsets: new Map(),
+    pollers: new Map()
   };
 
   const els = {
@@ -71,7 +84,8 @@
     lz: "#ffd447",
     medical: "#e4fff3",
     location: "#41f19b",
-    tracker: "#ffd447"
+    tracker: "#ffd447",
+    browser: "#4ddfea"
   };
 
   function iconFor(kind, label) {
@@ -104,6 +118,8 @@
         return "+";
       case "headset":
         return "⌖";
+      case "browser":
+        return "◆";
       default:
         return "•";
     }
@@ -138,12 +154,213 @@
     return Number.isFinite(number) ? number : null;
   }
 
+  function startOfflineMapFallback(container, eventFeed) {
+    container.replaceChildren();
+    container.style.position = "relative";
+    container.style.background = "#07110c";
+    const canvas = document.createElement("canvas");
+    canvas.style.width = "100%";
+    canvas.style.height = "100%";
+    canvas.style.display = "block";
+    container.append(canvas);
+    const ctx = canvas.getContext("2d");
+    let snapshot = { nodes: [], markers: [] };
+    const fallbackColors = {
+      headset: "#41f19b",
+      tracker: "#ffd447",
+      route: "#4ddfea",
+      target: "#ff4c4c",
+      threat: "#ffd447",
+      gunshot: "#ff4c4c",
+      direction: "#41f19b",
+      hold: "#ff4c4c",
+      location: "#41f19b",
+      browser: "#4ddfea"
+    };
+    const endpoint =
+      window.location && window.location.hostname &&
+      window.location.port === "8787"
+        ? `${window.location.protocol}//${window.location.host}`
+        : "http://192.168.1.61:8787";
+
+    function fallbackFeed(kind, message) {
+      if (!eventFeed) {
+        return;
+      }
+      const item = document.createElement("li");
+      const title = document.createElement("b");
+      const detail = document.createElement("span");
+      title.textContent = kind;
+      detail.textContent = message;
+      item.append(title, detail);
+      eventFeed.prepend(item);
+      while (eventFeed.children.length > 8) {
+        eventFeed.lastElementChild.remove();
+      }
+    }
+
+    function coord(input) {
+      const lat = normalizeNumber(input.lat ?? input.latitude);
+      const lon = normalizeNumber(input.lon ?? input.longitude);
+      return lat === null || lon === null ? null : { lat, lon };
+    }
+
+    function center() {
+      return (snapshot.center ? coord(snapshot.center) : null) ||
+        (snapshot.nodes || []).map(coord).find(Boolean) ||
+        { lat: 34.2981382, lon: -83.8257640 };
+    }
+
+    function offsetMeters(origin, point) {
+      const earthRadius = 6371000;
+      const latitude = origin.lat * Math.PI / 180;
+      return {
+        x: (point.lon - origin.lon) *
+          Math.PI / 180 *
+          Math.cos(latitude) *
+          earthRadius,
+        y: (point.lat - origin.lat) * Math.PI / 180 * earthRadius
+      };
+    }
+
+    function rangeFor(origin) {
+      let range = 120;
+      [...(snapshot.nodes || []), ...(snapshot.markers || [])]
+        .forEach((item) => {
+          const point = coord(item);
+          if (!point) {
+            return;
+          }
+          const delta = offsetMeters(origin, point);
+          range = Math.max(range, Math.hypot(delta.x, delta.y) * 1.25);
+        });
+      return Math.min(Math.max(range, 120), 50000);
+    }
+
+    function resize() {
+      const rect = container.getBoundingClientRect();
+      const ratio = window.devicePixelRatio || 1;
+      const width = Math.max(1, Math.round(rect.width));
+      const height = Math.max(1, Math.round(rect.height));
+      if (canvas.width !== width * ratio ||
+          canvas.height !== height * ratio) {
+        canvas.width = width * ratio;
+        canvas.height = height * ratio;
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      }
+      return { width, height };
+    }
+
+    function project(origin, range, point, size) {
+      const delta = offsetMeters(origin, point);
+      const scale = Math.min(size.width, size.height) * 0.42 / range;
+      return {
+        x: size.width / 2 + delta.x * scale,
+        y: size.height / 2 - delta.y * scale
+      };
+    }
+
+    function drawPoint(item, kind, origin, range, size) {
+      const point = coord(item);
+      if (!point) {
+        return;
+      }
+      const projected = project(origin, range, point, size);
+      const color = fallbackColors[kind] || fallbackColors.location;
+      const text = String(item.label || item.id || kind).slice(0, 16);
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      if (kind === "headset") {
+        ctx.rect(projected.x - 6, projected.y - 6, 12, 12);
+      } else {
+        ctx.arc(projected.x, projected.y, 5, 0, Math.PI * 2);
+      }
+      ctx.stroke();
+      ctx.fillText(text, projected.x + 10, projected.y - 8);
+    }
+
+    function draw() {
+      const size = resize();
+      const origin = center();
+      const range = rangeFor(origin);
+      ctx.clearRect(0, 0, size.width, size.height);
+      ctx.fillStyle = "#07110c";
+      ctx.fillRect(0, 0, size.width, size.height);
+      ctx.strokeStyle = "rgba(65,241,155,.16)";
+      for (let step = 0.25; step <= 1; step += 0.25) {
+        ctx.beginPath();
+        ctx.arc(
+          size.width / 2,
+          size.height / 2,
+          Math.min(size.width, size.height) * 0.42 * step,
+          0,
+          Math.PI * 2
+        );
+        ctx.stroke();
+      }
+      ctx.strokeStyle = "rgba(65,241,155,.7)";
+      ctx.beginPath();
+      ctx.moveTo(size.width / 2 - 20, size.height / 2);
+      ctx.lineTo(size.width / 2 + 20, size.height / 2);
+      ctx.moveTo(size.width / 2, size.height / 2 - 20);
+      ctx.lineTo(size.width / 2, size.height / 2 + 20);
+      ctx.stroke();
+      ctx.font = "12px system-ui";
+      (snapshot.markers || []).forEach((marker) => {
+        drawPoint(
+          marker,
+          String(marker.kind || marker.type || "location").toLowerCase(),
+          origin,
+          range,
+          size
+        );
+      });
+      (snapshot.nodes || []).forEach((node) => {
+        drawPoint(node, node.isLocal ? "headset" : "tracker", origin, range, size);
+      });
+      ctx.fillStyle = "#dfffea";
+      ctx.fillText(
+        `Center ${origin.lat.toFixed(6)}, ${origin.lon.toFixed(6)}  ` +
+          `Range ${Math.round(range)}m`,
+        14,
+        size.height - 18
+      );
+    }
+
+    async function poll() {
+      try {
+        const response = await fetch(`${endpoint}/snapshot`, {
+          cache: "no-store"
+        });
+        snapshot = await response.json();
+        draw();
+        fallbackFeed(
+          "HEADSET",
+          `${snapshot.radioStatus || "live"} - ` +
+            `${(snapshot.nodes || []).length} nodes`
+        );
+      } catch (error) {
+        fallbackFeed("HEADSET", `Offline map fetch failed: ${error.message}`);
+        draw();
+      }
+    }
+
+    window.addEventListener("resize", draw);
+    poll();
+    window.setInterval(poll, 2000);
+  }
+
   function normalizeEndpoint(value) {
     let endpoint = String(value || "").trim();
     if (!endpoint) {
       return "";
     }
-    if (!/^wss?:\/\//i.test(endpoint)) {
+    endpoint = endpoint.replace(/\/$/, "");
+    if (/^https?:\/\//i.test(endpoint)) {
+      endpoint = endpoint.replace(/^http/i, "ws");
+    } else if (!/^wss?:\/\//i.test(endpoint)) {
       endpoint = `ws://${endpoint}`;
     }
     try {
@@ -157,6 +374,61 @@
       return url.toString().replace(/\/$/, "");
     } catch (error) {
       return "";
+    }
+  }
+
+  function discoverDefaultEndpoints() {
+    const endpoints = [];
+    if (window.location && window.location.hostname) {
+      const host = window.location.hostname.toLowerCase();
+      const localPage = window.location.port === "8787";
+      if (localPage) {
+        const scheme = window.location.protocol === "https:" ? "wss" : "ws";
+        endpoints.push(`${scheme}://${window.location.host}`);
+      }
+    }
+    defaultTelemetryEndpoints.forEach((endpoint) => endpoints.push(endpoint));
+    return uniqueEndpoints(endpoints);
+  }
+
+  function endpointKey(endpoint) {
+    try {
+      const url = new URL(endpoint);
+      const host = url.hostname.toLowerCase() === "localhost"
+        ? "127.0.0.1"
+        : url.hostname.toLowerCase();
+      return `${url.protocol}//${host}:${url.port || "8787"}`;
+    } catch (error) {
+      return endpoint;
+    }
+  }
+
+  function uniqueEndpoints(values) {
+    const seen = new Set();
+    const endpoints = [];
+    values.map(normalizeEndpoint).filter(Boolean).forEach((endpoint) => {
+      const key = endpointKey(endpoint);
+      if (seen.has(key)) {
+        return;
+      }
+      seen.add(key);
+      endpoints.push(endpoint);
+    });
+    return endpoints;
+  }
+
+  function isCurrentPageEndpoint(endpoint) {
+    if (!window.location || !window.location.hostname ||
+        !window.location.port || window.location.port === "8787") {
+      return false;
+    }
+    try {
+      const url = new URL(endpoint);
+      return url.hostname.toLowerCase() ===
+          window.location.hostname.toLowerCase() &&
+        (url.port || "8787") === window.location.port;
+    } catch (error) {
+      return false;
     }
   }
 
@@ -276,6 +548,7 @@
     disconnectHeadset(endpoint);
     state.endpoints = state.endpoints.filter((item) => item !== endpoint);
     state.headsets.delete(endpoint);
+    stopSnapshotPolling(endpoint);
     saveEndpoints();
     renderHeadsetList();
     updateConnectionState();
@@ -305,6 +578,7 @@
       updateConnectionState();
       socket.addEventListener("open", () => {
         setHeadsetStatus(normalized, "Live", true);
+        stopSnapshotPolling(normalized);
         addFeed("HEADSET", `Connected ${endpointLabel(normalized)}`);
         socket.send(JSON.stringify({ type: "hello", client: "talleysoft-vision-web" }));
       });
@@ -318,16 +592,94 @@
       });
       socket.addEventListener("close", () => {
         setHeadsetStatus(normalized, "Closed", false);
+        startSnapshotPolling(normalized);
         addFeed("HEADSET", `Closed ${endpointLabel(normalized)}`);
       });
       socket.addEventListener("error", () => {
         setHeadsetStatus(normalized, "Error", false);
+        startSnapshotPolling(normalized);
         addFeed("HEADSET", `Error ${endpointLabel(normalized)}; try http://HEADSET-IP:8787/ directly`);
       });
     } catch (error) {
       setHeadsetStatus(normalized, "Error", false);
+      startSnapshotPolling(normalized);
       addFeed("HEADSET", error.message);
     }
+  }
+
+  function snapshotUrlForEndpoint(endpoint) {
+    try {
+      const url = new URL(endpoint);
+      url.protocol = url.protocol === "wss:" ? "https:" : "http:";
+      url.pathname = "/snapshot";
+      url.search = "";
+      url.hash = "";
+      return url.toString();
+    } catch (error) {
+      return "";
+    }
+  }
+
+  function controlUrlForEndpoint(endpoint, command) {
+    try {
+      const url = new URL(endpoint);
+      url.protocol = url.protocol === "wss:" ? "https:" : "http:";
+      url.pathname = "/control";
+      url.search = `?command=${encodeURIComponent(command)}`;
+      url.hash = "";
+      return url.toString();
+    } catch (error) {
+      return "";
+    }
+  }
+
+  function canAttemptHttpSnapshot(url) {
+    try {
+      const target = new URL(url);
+      const host = target.hostname.toLowerCase();
+      const local =
+        host === "127.0.0.1" ||
+        host === "localhost" ||
+        host === window.location.hostname.toLowerCase();
+      return window.location.protocol !== "https:" || local;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function startSnapshotPolling(endpoint) {
+    if (state.pollers.has(endpoint)) {
+      return;
+    }
+    const snapshotUrl = snapshotUrlForEndpoint(endpoint);
+    if (!snapshotUrl || !canAttemptHttpSnapshot(snapshotUrl)) {
+      return;
+    }
+
+    const poll = async () => {
+      try {
+        const response = await fetch(snapshotUrl, { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        handleMessage(await response.json(), endpoint);
+        setHeadsetStatus(endpoint, "Live snapshot", true);
+      } catch (error) {
+        setHeadsetStatus(endpoint, "No snapshot", false);
+      }
+    };
+
+    state.pollers.set(endpoint, window.setInterval(poll, 2000));
+    poll();
+  }
+
+  function stopSnapshotPolling(endpoint) {
+    const poller = state.pollers.get(endpoint);
+    if (!poller) {
+      return;
+    }
+    window.clearInterval(poller);
+    state.pollers.delete(endpoint);
   }
 
   function disconnectHeadset(endpoint, quiet) {
@@ -335,6 +687,7 @@
     if (headset && headset.socket) {
       headset.socket.close();
     }
+    stopSnapshotPolling(endpoint);
     if (headset) {
       headset.socket = null;
       headset.connected = false;
@@ -462,14 +815,28 @@
       return;
     }
     state.nodes.set(id, node);
-    state.latestNode = node;
+    if (node.isLocal || !state.latestNode || !state.latestNode.isLocal) {
+      state.latestNode = node;
+    }
+    if (node.isLocal &&
+        els.markerLat && els.markerLon &&
+        (!els.markerLat.value || !els.markerLon.value ||
+         els.markerLat.value === defaultCenter[0].toFixed(6) ||
+         els.markerLon.value === defaultCenter[1].toFixed(6))) {
+      els.markerLat.value = lat.toFixed(6);
+      els.markerLon.value = lon.toFixed(6);
+    }
     if (!state.didAutoCenter) {
       map.setView([lat, lon], Math.max(map.getZoom(), 15));
       state.didAutoCenter = true;
     }
 
     let layer = layers.nodes.get(id);
-    const iconKind = node.isLocal ? "headset" : "tracker";
+    const iconKind = node.source === "browser"
+      ? "browser"
+      : node.isLocal
+        ? "headset"
+        : "tracker";
     if (!layer) {
       layer = L.marker([lat, lon], { icon: iconFor(iconKind, label) })
         .addTo(map);
@@ -490,6 +857,9 @@
   }
 
   function updateMarker(input, endpoint) {
+    if (String(input.source || "").toLowerCase() === "headset-trail") {
+      return;
+    }
     const lat = normalizeNumber(input.lat ?? input.latitude);
     const lon = normalizeNumber(input.lon ?? input.longitude);
     if (lat === null || lon === null) {
@@ -512,6 +882,7 @@
       updatedAt: Date.now(),
       endpoint: endpoint || "local"
     };
+    const existing = state.markers.get(marker.id);
     state.markers.set(marker.id, marker);
 
     let layer = layers.markers.get(marker.id);
@@ -528,7 +899,13 @@
     if (kind === "route") {
       updateRoute(label);
     }
-    addFeed(kind.toUpperCase(), `${label} ${lat.toFixed(5)}, ${lon.toFixed(5)}`);
+    if (!existing ||
+        existing.lat !== marker.lat ||
+        existing.lon !== marker.lon ||
+        existing.label !== marker.label ||
+        existing.kind !== marker.kind) {
+      addFeed(kind.toUpperCase(), `${label} ${lat.toFixed(5)}, ${lon.toFixed(5)}`);
+    }
     updateMetrics();
   }
 
@@ -558,6 +935,25 @@
     route.setLatLngs(routePoints);
   }
 
+  function autoCenterFromFeatures() {
+    if (state.didAutoCenter) {
+      return;
+    }
+    const points = [
+      ...Array.from(state.nodes.values()).map((node) => [node.lat, node.lon]),
+      ...Array.from(state.markers.values()).map((marker) => [marker.lat, marker.lon])
+    ];
+    if (points.length === 1) {
+      map.setView(points[0], Math.max(map.getZoom(), 15));
+      state.didAutoCenter = true;
+      return;
+    }
+    if (points.length > 1) {
+      map.fitBounds(L.latLngBounds(points).pad(0.18), { maxZoom: 15 });
+      state.didAutoCenter = true;
+    }
+  }
+
   function handleMessage(payload, endpoint) {
     if (!payload || typeof payload !== "object") {
       return;
@@ -571,6 +967,8 @@
       if (!state.didAutoCenter && payload.center && payload.center.lat && payload.center.lon) {
         map.setView([payload.center.lat, payload.center.lon], payload.center.zoom || map.getZoom());
         state.didAutoCenter = true;
+      } else {
+        autoCenterFromFeatures();
       }
       return;
     }
@@ -589,19 +987,21 @@
 
   function buildCommand(kind, lat, lon, heading, label) {
     const safeLabel = String(label || kind.toUpperCase()).trim();
+    const sendLat = lat.toFixed(3);
+    const sendLon = lon.toFixed(3);
     if (kind === "hold") {
-      return `!stop ${lat.toFixed(6)} ${lon.toFixed(6)} ${safeLabel}`;
+      return `!stop ${sendLat} ${sendLon} ${safeLabel}`;
     }
     if (kind === "direction") {
-      return `!markdir ${lat.toFixed(6)} ${lon.toFixed(6)} ${Math.round(heading || 0)} ${safeLabel}`;
+      return `!markdir ${sendLat} ${sendLon} ${Math.round(heading || 0)} ${safeLabel}`;
     }
     if (kind === "threat" || kind === "gunshot") {
-      return `!${kind} ${lat.toFixed(6)} ${lon.toFixed(6)} ${Math.round(heading || 0)} ${safeLabel}`;
+      return `!${kind} ${sendLat} ${sendLon} ${Math.round(heading || 0)} ${safeLabel}`;
     }
     if (kind === "lz") {
-      return `!lz ${lat.toFixed(6)} ${lon.toFixed(6)} ${safeLabel}`;
+      return `!lz ${sendLat} ${sendLon} ${safeLabel}`;
     }
-    return `!${kind} ${lat.toFixed(6)} ${lon.toFixed(6)} ${safeLabel}`;
+    return `!${kind} ${sendLat} ${sendLon} ${safeLabel}`;
   }
 
   function sendMarker(kind, lat, lon, heading, label) {
@@ -632,6 +1032,52 @@
     }
   }
 
+  async function sendHeadsetControl(command) {
+    const control = String(command || "").trim();
+    if (!control) {
+      return;
+    }
+    const liveHeadsets = connectedHeadsets()
+      .filter((headset) =>
+        headset.socket && headset.socket.readyState === WebSocket.OPEN);
+    const snapshotHeadsets = Array.from(state.headsets.entries())
+      .filter(([, headset]) => headset.connected)
+      .filter(([, headset]) =>
+        !headset.socket || headset.socket.readyState !== WebSocket.OPEN);
+
+    if (liveHeadsets.length === 0 && snapshotHeadsets.length === 0) {
+      addFeed("CONTROL", `${control} not sent; no headset connected`);
+      return;
+    }
+
+    liveHeadsets.forEach((headset) => {
+      headset.socket.send(JSON.stringify({
+        type: "control",
+        control
+      }));
+    });
+
+    let httpSent = 0;
+    for (const [endpoint] of snapshotHeadsets) {
+      const controlUrl = controlUrlForEndpoint(endpoint, control);
+      if (!controlUrl || !canAttemptHttpSnapshot(controlUrl)) {
+        continue;
+      }
+      try {
+        const response = await fetch(controlUrl, { cache: "no-store" });
+        if (response.ok) {
+          httpSent++;
+        }
+      } catch (error) {
+        addFeed("CONTROL", `${endpointLabel(endpoint)} blocked ${control}`);
+      }
+    }
+
+    addFeed(
+      "CONTROL",
+      `${control} sent to ${liveHeadsets.length + httpSent} headset(s)`);
+  }
+
   function updateMetrics() {
     els.metricHeadsets.textContent = String(connectedHeadsets().length);
     els.metricMarkers.textContent = String(state.markers.size);
@@ -650,10 +1096,12 @@
       return;
     }
     els.gridReadout.textContent = `${node.lat.toFixed(5)}, ${node.lon.toFixed(5)}`;
-    els.gpsReadout.textContent = "GPS OK";
+    els.gpsReadout.textContent = node.source === "browser" ? "GPS LIVE" : "GPS OK";
     els.accuracyReadout.textContent =
       node.accuracyYards === null ? "ACC --" : `ACC ${Math.round(node.accuracyYards)} yd`;
-    els.meshReadout.textContent = endpointLabel(node.endpoint).toUpperCase();
+    els.meshReadout.textContent = node.source === "browser"
+      ? "THIS DEVICE"
+      : endpointLabel(node.endpoint).toUpperCase();
   }
 
   function pruneExpiredMarkers() {
@@ -724,6 +1172,12 @@
     });
   });
 
+  document.querySelectorAll("[data-headset-control]").forEach((button) => {
+    button.addEventListener("click", () => {
+      sendHeadsetControl(button.getAttribute("data-headset-control"));
+    });
+  });
+
   els.markerForm.addEventListener("submit", (event) => {
     event.preventDefault();
     const kind = els.markerKind.value;
@@ -755,10 +1209,15 @@
   els.disconnectAll.addEventListener("click", disconnectAllHeadsets);
   els.loadDemo.addEventListener("click", loadDemo);
 
-  state.endpoints = Array.from(new Set(loadEndpoints()));
+  state.endpoints = uniqueEndpoints([
+    ...loadEndpoints(),
+    ...discoverDefaultEndpoints()
+  ]).filter((endpoint) => !isCurrentPageEndpoint(endpoint));
+  saveEndpoints();
   renderHeadsetList();
   updateConnectionState();
   updateReadouts();
-  addFeed("READY", "Gainesville Square loaded; add each headset endpoint for live map data");
+  addFeed("READY", "Connecting to headset telemetry endpoints");
+  state.endpoints.forEach(connectHeadset);
   window.setInterval(pruneExpiredMarkers, 1000);
 })();

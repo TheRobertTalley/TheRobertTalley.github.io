@@ -28,8 +28,8 @@
     <section class="map-panel" aria-label="Team map">
       <div class="map-toolbar">
         <div>
-          <p class="eyebrow">Gainesville Square operations map</p>
-          <h1>GPS, Meshtastic, headset tracks, markers, and routes</h1>
+          <p class="eyebrow">Headset operations map</p>
+          <h1>Headset GPS, Meshtastic tracks, markers, and routes</h1>
         </div>
         <div class="tool-actions" aria-label="Map tools">
           <button type="button" data-map-action="center">Center</button>
@@ -80,13 +80,28 @@
           <button type="button" id="connect-all-headsets">Connect All</button>
           <button type="button" id="disconnect-all-headsets">Disconnect All</button>
         </div>
+        <div class="tool-stack headset-controls">
+          <button type="button" data-headset-control="layout_drone">Drone</button>
+          <button type="button" data-headset-control="layout_patrol">Patrol</button>
+          <button type="button" data-headset-control="layout_thermal">Thermal</button>
+          <button type="button" data-headset-control="layout_weapon">Weapon</button>
+          <button type="button" data-headset-control="thermal_off">Thermal Off</button>
+          <button type="button" data-headset-control="weapon_off">Weapon Off</button>
+          <button type="button" data-headset-control="mesh_connect">Mesh Connect</button>
+          <button type="button" data-headset-control="firmware_flash">Flash Radio</button>
+          <button type="button" data-headset-control="clear_local_markers">Clear Local Markers</button>
+        </div>
         <ul class="headset-list" id="headset-list">
           <li>No headset endpoints saved.</li>
         </ul>
         <p class="fine-print">
+          Default headset: <code>192.168.1.61:8787</code>.
+          <a href="http://192.168.1.61:8787/">Open headset map directly</a>.
+          <br>
           Add each headset on the same network as <code>ws://HEADSET-IP:8787</code>.
-          If the browser blocks local WebSocket access from GitHub Pages, open
-          <code>http://HEADSET-IP:8787/</code> directly from that headset.
+          If GitHub Pages cannot open the local telemetry socket, use the
+          loopback endpoint through ADB forwarding or open
+          <code>http://HEADSET-IP:8787/</code> directly.
         </p>
       </section>
 
@@ -138,7 +153,7 @@
           <span class="status-pill warn" id="feed-mode">Local</span>
         </div>
         <ol class="event-feed" id="event-feed">
-          <li><b>READY</b><span>Gainesville Square map loaded; add headset endpoints for live mesh data</span></li>
+          <li><b>READY</b><span>Waiting for headset telemetry</span></li>
         </ol>
       </section>
     </aside>
@@ -193,7 +208,21 @@
   </main>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="assets/talleysoft-site.js"></script>
+  <script>
+    (function () {
+      if (!window.L || !window.L.map || window.tsvMapHooked) {
+        return;
+      }
+      window.tsvMapHooked = true;
+      var originalMapFactory = window.L.map;
+      window.L.map = function () {
+        var map = originalMapFactory.apply(window.L, arguments);
+        window.tsvOpsMap = map;
+        return map;
+      };
+    })();
+  </script>
+  <script src="assets/talleysoft-site.js?v=20260803-headset-only-3"></script>
 </body>
 </html>
 

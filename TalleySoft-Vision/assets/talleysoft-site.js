@@ -333,7 +333,8 @@
     async function poll() {
       try {
         const response = await fetch(`${endpoint}/snapshot`, {
-          cache: "no-store"
+          cache: "no-store",
+          targetAddressSpace: "local"
         });
         snapshot = await response.json();
         draw();
@@ -641,14 +642,28 @@
     try {
       const target = new URL(url);
       const host = target.hostname.toLowerCase();
-      const local =
-        host === "127.0.0.1" ||
-        host === "localhost" ||
-        host === window.location.hostname.toLowerCase();
-      return window.location.protocol !== "https:" || local;
+    return window.location.protocol !== "https:" ||
+      isPrivateNetworkHost(host) ||
+      host === window.location.hostname.toLowerCase();
     } catch (error) {
       return false;
     }
+  }
+
+  function isPrivateNetworkHost(host) {
+    if (host === "localhost" || host === "::1") {
+      return true;
+    }
+    const parts = host.split(".").map((part) => Number(part));
+    if (parts.length !== 4 || parts.some((part) => !Number.isInteger(part))) {
+      return false;
+    }
+    const [a, b] = parts;
+    return a === 10 ||
+      a === 127 ||
+      (a === 169 && b === 254) ||
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 168);
   }
 
   function startSnapshotPolling(endpoint) {
@@ -672,7 +687,10 @@
       }
       poller.inFlight = true;
       try {
-        const response = await fetch(snapshotUrl, { cache: "no-store" });
+        const response = await fetch(snapshotUrl, {
+          cache: "no-store",
+          targetAddressSpace: "local"
+        });
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
         }
@@ -712,7 +730,10 @@
     }
     window.setTimeout(async () => {
       try {
-        const response = await fetch(snapshotUrl, { cache: "no-store" });
+        const response = await fetch(snapshotUrl, {
+          cache: "no-store",
+          targetAddressSpace: "local"
+        });
         if (response.ok) {
           handleMessage(await response.json(), endpoint);
           setHeadsetStatus(endpoint, "Live snapshot", true);
@@ -1229,7 +1250,10 @@
         continue;
       }
       try {
-        const response = await fetch(controlUrl, { cache: "no-store" });
+        const response = await fetch(controlUrl, {
+          cache: "no-store",
+          targetAddressSpace: "local"
+        });
         if (response.ok) {
           httpSent++;
           requestSnapshotSoon(endpoint, 250);

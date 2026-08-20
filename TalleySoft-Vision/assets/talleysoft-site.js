@@ -36,6 +36,14 @@
 
   const state = {
     selectedKind: "target",
+    placementKind: null,
+    selectedNodeId: null,
+    routeNumber: 1,
+    routeLabel: "ROUTE 1",
+    routeDraftPoints: [],
+    routePreview: null,
+    routeDrawing: false,
+    routeSuppressClickUntil: 0,
     latestNode: null,
     didAutoCenter: false,
     didBrowserCenter: false,
@@ -71,6 +79,10 @@
     markerLat: document.getElementById("marker-lat"),
     markerLon: document.getElementById("marker-lon"),
     markerHeading: document.getElementById("marker-heading"),
+    mapFrame: document.querySelector(".map-frame"),
+    markerToolStatus: document.getElementById("marker-tool-status"),
+    finishRoute: document.getElementById("finish-route"),
+    cancelMarkerTool: document.getElementById("cancel-marker-tool"),
     loadDemo: document.getElementById("load-demo")
   };
 
@@ -515,20 +527,44 @@
       const item = document.createElement("li");
       const label = document.createElement("span");
       const status = document.createElement("b");
+      const center = document.createElement("button");
       const connect = document.createElement("button");
       const remove = document.createElement("button");
+      const node = Array.from(state.nodes.values()).find((candidate) =>
+        candidate.endpoint === endpoint && candidate.isLocal);
+      item.classList.toggle("is-selected", Boolean(node && node.id === state.selectedNodeId));
       label.textContent = endpointLabel(endpoint);
       status.textContent = headset.status || "Saved";
       status.className = headset.connected ? "good-text" : "warn-text";
+      center.type = "button";
+      center.textContent = "Center";
+      center.disabled = !node;
+      center.title = node ? `Center on ${node.label}` : "Waiting for a headset position";
+      center.addEventListener("click", () => {
+        if (node) {
+          focusNode(node);
+        }
+      });
       connect.type = "button";
       connect.textContent = headset.connected ? "Reconnect" : "Connect";
       connect.addEventListener("click", () => connectHeadset(endpoint));
       remove.type = "button";
       remove.textContent = "Remove";
       remove.addEventListener("click", () => removeHeadset(endpoint));
-      item.append(label, status, connect, remove);
+      item.append(label, status, center, connect, remove);
       els.headsetList.append(item);
     });
+  }
+
+  function focusNode(node) {
+    if (!node || !Number.isFinite(node.lat) || !Number.isFinite(node.lon)) {
+      addFeed("CENTER", "No valid headset position is available yet");
+      return;
+    }
+    state.selectedNodeId = node.id;
+    map.flyTo([node.lat, node.lon], Math.max(map.getZoom(), 15), { duration: 0.45 });
+    addFeed("CENTER", `Centered on ${node.label}`);
+    renderHeadsetList();
   }
 
   function addHeadset() {
@@ -932,6 +968,7 @@
       .setLatLng([lat, lon])
       .setIcon(iconFor(iconKind, label))
       .bindPopup(nodePopup(node));
+    renderHeadsetList();
     updateMetrics();
     updateReadouts();
   }
@@ -1204,7 +1241,7 @@
     return `!${kind} ${sendLat} ${sendLon} ${safeLabel}`;
   }
 
-  function sendMarker(kind, lat, lon, heading, label) {
+  function sendMarker(kind, lat, lon, heading, label, options = {}) {
     const marker = { type: "marker", kind, label, lat, lon, heading };
     if (kind === "threat") {
       marker.coneDegrees = 3;
@@ -1225,13 +1262,194 @@
         requestSnapshotSoon(headset.endpoint, 250);
         requestSnapshotSoon(headset.endpoint, 850);
       });
-      addFeed("SEND", `${command} sent to ${liveHeadsets.length} headset(s)`);
-    } else if (navigator.clipboard) {
+      if (!options.silent) {
+        addFeed("SEND", `${command} sent to ${liveHeadsets.length} headset(s)`);
+      }
+    } else if (!options.silent && navigator.clipboard) {
       navigator.clipboard.writeText(command).catch(() => {});
-      addFeed("COPY", `${command} copied; no headset connected`);
-    } else {
+      if (!options.silent) {
+        addFeed("COPY", `${command} copied; no headset connected`);
+      }
+    } else if (!options.silent) {
       addFeed("COMMAND", command);
     }
+  }
+
+  function updateMarkerToolUi() {
+    const active = state.placementKind;
+    document.querySelectorAll("[data-marker-kind]").forEach((button) => {
+      const isActive = button.getAttribute("data-marker-kind") === active;
+      button.classList.toggle("is-active", isActive);
+      button.setAttribute("aria-pressed", isActive ? "true" : "false");
+    });
+    if (els.finishRoute) {
+      els.finishRoute.hidden = active !== "route";
+      els.finishRoute.disabled = state.routeDraftPoints.length < 2;
+    }
+    if (els.cancelMarkerTool) {
+      els.cancelMarkerTool.hidden = !active;
+    }
+    if (els.mapFrame) {
+      els.mapFrame.classList.toggle("is-placing", Boolean(active));
+      els.mapFrame.classList.toggle("is-route-drawing", state.routeDrawing);
+    }
+    if (els.markerToolStatus) {
+      if (!active) {
+        els.markerToolStatus.textContent = "Select Target or Route, then click or drag on the map.";
+      } else if (active === "route") {
+        const count = state.routeDraftPoints.length;
+        els.markerToolStatus.textContent = count >= 2
+          ? `ROUTE ${count} points ready • keep clicking or drag, then Finish Route`
+          : "ROUTE armed • drag across the map or click points, then Finish Route";
+      } else {
+        els.markerToolStatus.textContent = `${active.toUpperCase()} armed • click the map to place it`;
+      }
+    }
+  }
+
+  function clearRoutePreview() {
+    if (state.routePreview) {
+      state.routePreview.remove();
+      state.routePreview = null;
+    }
+  }
+
+  function refreshRoutePreview() {
+    clearRoutePreview();
+    if (state.routeDraftPoints.length < 2) {
+      return;
+    }
+    state.routePreview = L.polyline(state.routeDraftPoints, {
+      color: colors.route,
+      weight: 4,
+      opacity: 0.9,
+      dashArray: "8 8",
+      interactive: false
+    }).addTo(map);
+  }
+
+  function armMarkerTool(kind) {
+    const next = String(kind || "target").toLowerCase();
+    state.selectedKind = next;
+    els.markerKind.value = next === "hold" ? "hold" : next;
+    state.placementKind = next;
+    state.routeDrawing = false;
+    state.routeDraftPoints = [];
+    clearRoutePreview();
+    if (next === "route") {
+      state.routeLabel = (els.markerLabel.value.trim() || `ROUTE ${state.routeNumber}`).toUpperCase();
+    }
+    updateMarkerToolUi();
+    addFeed("TOOL", `${next.toUpperCase()} armed; click or drag on the map`);
+  }
+
+  function cancelMarkerTool() {
+    state.placementKind = null;
+    state.routeDrawing = false;
+    state.routeDraftPoints = [];
+    clearRoutePreview();
+    updateMarkerToolUi();
+    addFeed("TOOL", "Map tool cancelled");
+  }
+
+  function placeArmedMarker(latlng) {
+    const kind = state.placementKind;
+    if (!kind || kind === "route") {
+      return;
+    }
+    const heading = normalizeNumber(els.markerHeading ? els.markerHeading.value : 0) || 0;
+    const label = els.markerLabel.value.trim() || kind.toUpperCase();
+    els.markerLat.value = latlng.lat.toFixed(6);
+    els.markerLon.value = latlng.lng.toFixed(6);
+    sendMarker(kind, latlng.lat, latlng.lng, heading, label);
+    state.placementKind = null;
+    updateMarkerToolUi();
+  }
+
+  function addRoutePoint(latlng) {
+    if (state.placementKind !== "route") {
+      return;
+    }
+    const previous = state.routeDraftPoints[state.routeDraftPoints.length - 1];
+    if (previous && map.distance(previous, latlng) < 2) {
+      return;
+    }
+    state.routeDraftPoints.push(latlng);
+    els.markerLat.value = latlng.lat.toFixed(6);
+    els.markerLon.value = latlng.lng.toFixed(6);
+    refreshRoutePreview();
+    updateMarkerToolUi();
+  }
+
+  function finishRoute() {
+    if (state.routeDraftPoints.length < 2) {
+      addFeed("ROUTE", "Add at least two points before finishing");
+      return;
+    }
+    const label = state.routeLabel || `ROUTE ${state.routeNumber}`;
+    const heading = normalizeNumber(els.markerHeading ? els.markerHeading.value : 0) || 0;
+    state.routeDraftPoints.forEach((point) => {
+      sendMarker("route", point.lat, point.lng, heading, label, { silent: true });
+    });
+    addFeed("ROUTE", `${label} sent with ${state.routeDraftPoints.length} points`);
+    state.routeNumber += 1;
+    state.placementKind = null;
+    state.routeDrawing = false;
+    state.routeDraftPoints = [];
+    clearRoutePreview();
+    updateMarkerToolUi();
+  }
+
+  function routePointFromPointer(event) {
+    try {
+      return map.mouseEventToLatLng(event);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function startRoutePointer(event) {
+    if (state.placementKind !== "route" || event.button === 2) {
+      return;
+    }
+    const point = routePointFromPointer(event);
+    if (!point) {
+      return;
+    }
+    state.routeDrawing = true;
+    state.routeSuppressClickUntil = Date.now() + 350;
+    map.dragging.disable();
+    if (mapElement.setPointerCapture && event.pointerId !== undefined) {
+      mapElement.setPointerCapture(event.pointerId);
+    }
+    addRoutePoint(point);
+    updateMarkerToolUi();
+    event.preventDefault();
+  }
+
+  function moveRoutePointer(event) {
+    if (!state.routeDrawing) {
+      return;
+    }
+    const point = routePointFromPointer(event);
+    if (point) {
+      addRoutePoint(point);
+    }
+    event.preventDefault();
+  }
+
+  function endRoutePointer(event) {
+    if (!state.routeDrawing) {
+      return;
+    }
+    state.routeDrawing = false;
+    map.dragging.enable();
+    if (mapElement.releasePointerCapture && event.pointerId !== undefined &&
+        mapElement.hasPointerCapture && mapElement.hasPointerCapture(event.pointerId)) {
+      mapElement.releasePointerCapture(event.pointerId);
+    }
+    updateMarkerToolUi();
+    event.preventDefault();
   }
 
   async function sendHeadsetControl(command) {
@@ -1352,31 +1570,31 @@
 
   document.querySelectorAll("[data-marker-kind]").forEach((button) => {
     button.addEventListener("click", () => {
-      state.selectedKind = button.getAttribute("data-marker-kind") || "target";
-      els.markerKind.value = state.selectedKind === "hold" ? "hold" : state.selectedKind;
-      const centerPoint = map.getCenter();
-      els.markerLat.value = centerPoint.lat.toFixed(6);
-      els.markerLon.value = centerPoint.lng.toFixed(6);
-      if (els.markerHeading && state.latestNode && state.latestNode.heading !== null) {
-        els.markerHeading.value = Math.round(state.latestNode.heading);
-      }
-      addFeed("TOOL", `${state.selectedKind.toUpperCase()} marker armed at map center`);
+      armMarkerTool(button.getAttribute("data-marker-kind") || "target");
     });
   });
 
   document.querySelectorAll("[data-map-action]").forEach((button) => {
     button.addEventListener("click", () => {
       if (button.getAttribute("data-map-action") === "center") {
-        if (state.latestNode) {
-          map.setView([state.latestNode.lat, state.latestNode.lon], Math.max(map.getZoom(), 15));
-          addFeed("CENTER", `Centered on ${state.latestNode.label}`);
+        const selected = state.selectedNodeId && state.nodes.get(state.selectedNodeId);
+        const node = selected || state.latestNode ||
+          Array.from(state.nodes.values()).find((candidate) => candidate.isLocal);
+        if (node) {
+          focusNode(node);
         } else {
-          map.setView(defaultCenter, defaultZoom);
-          addFeed("CENTER", "Centered on Gainesville Square");
+          addFeed("CENTER", "No headset position is available yet");
         }
       }
     });
   });
+
+  if (els.finishRoute) {
+    els.finishRoute.addEventListener("click", finishRoute);
+  }
+  if (els.cancelMarkerTool) {
+    els.cancelMarkerTool.addEventListener("click", cancelMarkerTool);
+  }
 
   document.querySelectorAll("[data-headset-control]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -1399,10 +1617,26 @@
   });
 
   map.on("click", (event) => {
+    if (Date.now() < state.routeSuppressClickUntil) {
+      return;
+    }
+    if (state.placementKind === "route") {
+      addRoutePoint(event.latlng);
+      return;
+    }
+    if (state.placementKind) {
+      placeArmedMarker(event.latlng);
+      return;
+    }
     els.markerLat.value = event.latlng.lat.toFixed(6);
     els.markerLon.value = event.latlng.lng.toFixed(6);
     addFeed("POINT", "Marker coordinates set from map click");
   });
+
+  mapElement.addEventListener("pointerdown", startRoutePointer, { passive: false });
+  mapElement.addEventListener("pointermove", moveRoutePointer, { passive: false });
+  mapElement.addEventListener("pointerup", endRoutePointer, { passive: false });
+  mapElement.addEventListener("pointercancel", endRoutePointer, { passive: false });
 
   els.addHeadset.addEventListener("click", addHeadset);
   els.headsetUrl.addEventListener("keydown", (event) => {
@@ -1423,6 +1657,7 @@
   renderHeadsetList();
   updateConnectionState();
   updateReadouts();
+  updateMarkerToolUi();
   addFeed("READY", "Connecting to headset telemetry endpoints");
   state.endpoints.forEach(connectHeadset);
   window.setInterval(pruneExpiredMarkers, 1000);

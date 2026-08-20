@@ -35,6 +35,8 @@
           <button type="button" data-map-action="center">Center</button>
           <button type="button" data-marker-kind="target">Target</button>
           <button type="button" data-marker-kind="route">Route</button>
+          <button type="button" id="finish-route" hidden>Finish Route</button>
+          <button type="button" id="cancel-marker-tool" hidden>Cancel</button>
           <button type="button" data-marker-kind="threat">Threat</button>
           <button type="button" data-marker-kind="gunshot">Shot</button>
           <button type="button" data-marker-kind="direction">Direction</button>
@@ -43,6 +45,9 @@
       </div>
       <div class="map-frame">
         <div id="ops-map" aria-label="Tactical operations map"></div>
+        <div class="map-tool-status" id="marker-tool-status" role="status" aria-live="polite">
+          Select Target or Route, then click or drag on the map.
+        </div>
         <div class="map-readout">
           <span id="grid-readout">MAP READY</span>
           <span id="gps-readout">GPS WAIT</span>

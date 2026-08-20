@@ -107,6 +107,14 @@ nav a:hover {
   background: rgba(65, 241, 155, 0.18);
 }
 
+.tool-actions button.is-active,
+.tool-stack button.is-active {
+  border-color: var(--green);
+  background: rgba(65, 241, 155, 0.24);
+  color: var(--green);
+  box-shadow: 0 0 0 1px rgba(65, 241, 155, 0.18);
+}
+
 .button.ghost {
   background: transparent;
 }
@@ -178,6 +186,32 @@ h2 {
   position: relative;
   min-height: 32rem;
   background: #07110e;
+}
+
+.map-frame.is-placing #ops-map {
+  cursor: crosshair;
+}
+
+.map-frame.is-route-drawing #ops-map {
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.map-tool-status {
+  position: absolute;
+  z-index: 500;
+  top: 0.8rem;
+  left: 50%;
+  max-width: calc(100% - 2rem);
+  transform: translateX(-50%);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(3, 8, 6, 0.82);
+  color: var(--text);
+  padding: 0.38rem 0.7rem;
+  font-size: 0.78rem;
+  text-align: center;
+  pointer-events: none;
 }
 
 #ops-map {
@@ -345,13 +379,18 @@ dd {
 
 .headset-list li {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  grid-template-columns: minmax(0, 1fr) auto auto auto auto;
   align-items: center;
   gap: 0.4rem;
   border: 1px solid var(--line);
   border-radius: 6px;
   background: rgba(3, 8, 6, 0.48);
   padding: 0.45rem;
+}
+
+.headset-list li.is-selected {
+  border-color: var(--green);
+  background: rgba(65, 241, 155, 0.12);
 }
 
 .headset-list li > span {

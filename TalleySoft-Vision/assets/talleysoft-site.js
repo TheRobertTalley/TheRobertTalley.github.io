@@ -1328,6 +1328,37 @@
     }).addTo(map);
   }
 
+  function defaultLabelForKind(kind) {
+    switch (String(kind || "").toLowerCase()) {
+      case "route":
+        return `PATH ${state.routeNumber}`;
+      case "target":
+        return "TARGET";
+      case "threat":
+        return "THREAT";
+      case "gunshot":
+        return "GUNSHOT";
+      case "direction":
+        return "DIRECTION";
+      case "hold":
+        return "HOLD";
+      case "lz":
+        return "LANDING ZONE";
+      case "medical":
+        return "MEDICAL";
+      case "location":
+        return "LOCATION";
+      default:
+        return String(kind || "MARKER").toUpperCase();
+    }
+  }
+
+  function isGeneratedMarkerLabel(value) {
+    const label = String(value || "").trim().toUpperCase();
+    return !label || label === "RIDGE" ||
+      /^(TARGET|THREAT|GUNSHOT|DIRECTION|HOLD|LOCATION|MEDICAL|LANDING ZONE|LZ|PATH|ROUTE)(?:\s+\d+)?$/.test(label);
+  }
+
   function armMarkerTool(kind) {
     const next = String(kind || "target").toLowerCase();
     state.selectedKind = next;
@@ -1336,8 +1367,11 @@
     state.routeDrawing = false;
     state.routeDraftPoints = [];
     clearRoutePreview();
+    if (isGeneratedMarkerLabel(els.markerLabel.value)) {
+      els.markerLabel.value = defaultLabelForKind(next);
+    }
     if (next === "route") {
-      state.routeLabel = (els.markerLabel.value.trim() || `ROUTE ${state.routeNumber}`).toUpperCase();
+      state.routeLabel = els.markerLabel.value.trim().toUpperCase() || defaultLabelForKind("route");
     }
     updateMarkerToolUi();
     addFeed("TOOL", `${next.toUpperCase()} armed; click or drag on the map`);

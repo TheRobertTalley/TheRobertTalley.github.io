@@ -969,8 +969,11 @@
     if (lat === null || lon === null) {
       return;
     }
-    const id = String(input.id || input.nodeId || input.nodeNum || "local");
-    const label = input.label || input.shortName || input.longName || id;
+    const sourceId = String(input.id || input.nodeId || input.nodeNum || "local");
+    const label = input.label || input.shortName || input.longName || sourceId;
+    const id = endpoint && sourceId === "local"
+      ? `${endpoint}::${label}`
+      : `${endpoint || "local"}::${sourceId}`;
     const now = Date.now();
     const node = {
       id,
@@ -1017,13 +1020,17 @@
     return `<strong>${escapeHtml(node.label)}</strong><br>Heading ${heading}<br>Accuracy ${accuracy}<br>${escapeHtml(node.source)}<br>${escapeHtml(endpointLabel(node.endpoint))}`;
   }
 
-  function nodeKeyFromInput(input) {
+  function nodeKeyFromInput(input, endpoint) {
     const lat = normalizeNumber(input.lat ?? input.latitude);
     const lon = normalizeNumber(input.lon ?? input.longitude);
     if (lat === null || lon === null) {
       return "";
     }
-    return String(input.id || input.nodeId || input.nodeNum || "local");
+    const sourceId = String(input.id || input.nodeId || input.nodeNum || "local");
+    const label = input.label || input.shortName || input.longName || sourceId;
+    return endpoint && sourceId === "local"
+      ? `${endpoint}::${label}`
+      : `${endpoint || "local"}::${sourceId}`;
   }
 
   function markerKeyFromInput(input) {
@@ -1243,7 +1250,7 @@
       const nodeIds = new Set();
       const markerIds = new Set();
       (payload.nodes || []).forEach((node) => {
-        const id = nodeKeyFromInput(node);
+        const id = nodeKeyFromInput(node, endpoint);
         if (id) {
           nodeIds.add(id);
         }

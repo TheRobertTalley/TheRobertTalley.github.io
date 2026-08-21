@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>TalleySoft Vision IoT Ops</title>
-  <meta name="description" content="TalleySoft Vision team map, headset tracker, ATAK markers, targets, routes, and tactical alerts.">
+  <meta name="description" content="TalleySoft Vision asset map, ATAK markers, targets, routes, and tactical alerts.">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="assets/talleysoft-site.css?v=20260820-map-tools">
 </head>
@@ -28,8 +28,8 @@
     <section class="map-panel" aria-label="Team map">
       <div class="map-toolbar">
         <div>
-          <p class="eyebrow">Headset operations map</p>
-          <h1>Headset GPS, Meshtastic tracks, markers, and routes</h1>
+          <p class="eyebrow">Asset operations map</p>
+          <h1>Asset GPS, Meshtastic tracks, markers, and routes</h1>
         </div>
         <div class="tool-actions" aria-label="Map tools">
           <button type="button" data-map-action="center">Center</button>
@@ -60,7 +60,7 @@
           <span class="status-pill warn" id="connection-pill">Offline</span>
         </div>
         <dl class="metrics">
-          <div><dt>Headsets</dt><dd id="metric-headsets">0</dd></div>
+          <div><dt>Assets</dt><dd id="metric-headsets">0</dd></div>
           <div><dt>Markers</dt><dd id="metric-markers">0</dd></div>
           <div><dt>Targets</dt><dd id="metric-targets">0</dd></div>
           <div><dt>Radio</dt><dd id="metric-radio">Local</dd></div>
@@ -69,12 +69,12 @@
 
       <section class="panel">
         <div class="panel-title">
-          <h2>Headsets</h2>
-          <span class="status-pill warn" id="socket-status">No headset</span>
+          <h2>Assets</h2>
+          <span class="status-pill warn" id="socket-status">No asset</span>
         </div>
-        <label class="field-label" for="headset-url">Headset WebSocket</label>
+        <label class="field-label" for="headset-url">Asset endpoint</label>
         <div class="connect-row">
-          <input id="headset-url" value="" placeholder="ws://HEADSET-IP:8787" spellcheck="false">
+          <input id="headset-url" value="" placeholder="http://ASSET-IP:8088" spellcheck="false">
           <button type="button" id="add-headset">Add</button>
         </div>
         <div class="button-row headset-actions">
@@ -96,16 +96,14 @@
           <button type="button" data-headset-control="clear_local_markers">Clear Local</button>
         </div>
         <ul class="headset-list" id="headset-list">
-          <li>No headset endpoints saved.</li>
+          <li>No asset endpoints saved.</li>
         </ul>
         <p class="fine-print">
-          Default headset: <code>192.168.1.61:8787</code>.
-          <a href="http://192.168.1.61:8787/">Open headset map directly</a>.
+          Mayhamburger Asset: <code>http://ASSET-IP:8088</code>.
           <br>
-          Add each headset on the same network as <code>ws://HEADSET-IP:8787</code>.
-          If GitHub Pages cannot open the local telemetry socket, use the
-          loopback endpoint through ADB forwarding or open
-          <code>http://HEADSET-IP:8787/</code> directly.
+          Add each Asset on the same network. Mayhamburger publishes Vision telemetry
+          at <code>/snapshot</code> and ATAK Cursor-on-Target at <code>/cot.xml</code>.
+          If GitHub Pages cannot open a local endpoint, open the Asset URL directly.
         </p>
       </section>
 
@@ -115,8 +113,8 @@
           <span class="status-pill good">Local</span>
         </div>
         <p>
-          Build and preview tactical map events before sending them to the
-          headset or team mesh.
+          Build and preview tactical map events before sending them to an
+          Asset or team mesh.
         </p>
         <div class="tool-stack">
           <button type="button" data-marker-kind="target">Set Target</button>
@@ -157,7 +155,7 @@
           <span class="status-pill warn" id="feed-mode">Local</span>
         </div>
         <ol class="event-feed" id="event-feed">
-          <li><b>READY</b><span>Waiting for headset telemetry</span></li>
+          <li><b>READY</b><span>Waiting for Asset telemetry</span></li>
         </ol>
       </section>
     </aside>
@@ -226,7 +224,7 @@
       };
     })();
   </script>
-  <script src="assets/talleysoft-site.js?v=20260820-map-tools"></script>
+  <script src="assets/talleysoft-site.js?v=20260821-assets"></script>
 </body>
 </html>
 

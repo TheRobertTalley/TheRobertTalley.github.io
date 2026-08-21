@@ -456,7 +456,7 @@
         return saved.map(normalizeEndpoint).filter(Boolean);
       }
     } catch (error) {
-      addFeed("HEADSET", "Ignored invalid saved headset list");
+      addFeed("ASSET", "Ignored invalid saved Asset list");
     }
     return [];
   }
@@ -498,8 +498,8 @@
     els.socketStatus.textContent = live
       ? `${connected}/${total} live`
       : total > 0
-        ? "No headset live"
-        : "No headset";
+        ? "No Asset live"
+        : "No Asset";
     els.connectionPill.textContent = live ? "Live" : "Offline";
     els.feedMode.textContent = live ? "Live" : "Local";
     els.socketStatus.classList.toggle("good", live);
@@ -517,7 +517,7 @@
     els.headsetList.replaceChildren();
     if (state.endpoints.length === 0) {
       const item = document.createElement("li");
-      item.textContent = "No headset endpoints saved.";
+      item.textContent = "No Asset endpoints saved.";
       els.headsetList.append(item);
       updateConnectionState();
       return;
@@ -570,14 +570,14 @@
   function addHeadset() {
     const endpoint = normalizeEndpoint(els.headsetUrl.value);
     if (!endpoint) {
-      addFeed("HEADSET", "Enter a headset IP or WebSocket URL");
+      addFeed("ASSET", "Enter an Asset URL");
       return;
     }
     if (!state.endpoints.includes(endpoint)) {
       state.endpoints.push(endpoint);
       saveEndpoints();
       setHeadsetStatus(endpoint, "Saved", false);
-      addFeed("HEADSET", `Saved ${endpoint}`);
+      addFeed("ASSET", `Saved ${endpoint}`);
     }
     els.headsetUrl.value = "";
     renderHeadsetList();
@@ -592,13 +592,13 @@
     saveEndpoints();
     renderHeadsetList();
     updateConnectionState();
-    addFeed("HEADSET", `Removed ${endpointLabel(endpoint)}`);
+    addFeed("ASSET", `Removed ${endpointLabel(endpoint)}`);
   }
 
   function connectHeadset(endpoint) {
     const normalized = normalizeEndpoint(endpoint);
     if (!normalized) {
-      addFeed("HEADSET", "Invalid headset endpoint");
+      addFeed("ASSET", "Invalid Asset endpoint");
       return;
     }
     if (!state.endpoints.includes(normalized)) {
@@ -620,7 +620,7 @@
       socket.addEventListener("open", () => {
         setHeadsetStatus(normalized, "Live", true);
         stopSnapshotPolling(normalized);
-        addFeed("HEADSET", `Connected ${endpointLabel(normalized)}`);
+        addFeed("ASSET", `Connected ${endpointLabel(normalized)}`);
         socket.send(JSON.stringify({ type: "hello", client: "talleysoft-vision-web" }));
       });
       socket.addEventListener("message", (event) => {
@@ -628,23 +628,23 @@
           handleMessage(JSON.parse(event.data), normalized);
           setHeadsetStatus(normalized, "Live", true);
         } catch (error) {
-          addFeed("HEADSET", `Ignored malformed data from ${endpointLabel(normalized)}`);
+          addFeed("ASSET", `Ignored malformed data from ${endpointLabel(normalized)}`);
         }
       });
       socket.addEventListener("close", () => {
         setHeadsetStatus(normalized, "Closed", false);
         startSnapshotPolling(normalized);
-        addFeed("HEADSET", `Closed ${endpointLabel(normalized)}`);
+        addFeed("ASSET", `Closed ${endpointLabel(normalized)}`);
       });
       socket.addEventListener("error", () => {
         setHeadsetStatus(normalized, "Error", false);
         startSnapshotPolling(normalized);
-        addFeed("HEADSET", `Error ${endpointLabel(normalized)}; try http://HEADSET-IP:8787/ directly`);
+        addFeed("ASSET", `Error ${endpointLabel(normalized)}; try the Asset URL directly`);
       });
     } catch (error) {
       setHeadsetStatus(normalized, "Error", false);
       startSnapshotPolling(normalized);
-      addFeed("HEADSET", error.message);
+      addFeed("ASSET", error.message);
     }
   }
 
@@ -817,7 +817,7 @@
       state.headsets.set(endpoint, headset);
     }
     if (!quiet) {
-      addFeed("HEADSET", `Disconnected ${endpointLabel(endpoint)}`);
+      addFeed("ASSET", `Disconnected ${endpointLabel(endpoint)}`);
     }
     renderHeadsetList();
     updateConnectionState();
@@ -825,7 +825,7 @@
 
   function connectAllHeadsets() {
     if (state.endpoints.length === 0) {
-      addFeed("HEADSET", "Add at least one headset endpoint first");
+      addFeed("ASSET", "Add at least one Asset endpoint first");
       return;
     }
     state.endpoints.forEach(connectHeadset);
@@ -833,7 +833,7 @@
 
   function disconnectAllHeadsets() {
     state.endpoints.forEach((endpoint) => disconnectHeadset(endpoint, true));
-    addFeed("HEADSET", "Disconnected all headset endpoints");
+    addFeed("ASSET", "Disconnected all Asset endpoints");
   }
 
   function markerId(marker) {
@@ -1692,7 +1692,7 @@
   updateConnectionState();
   updateReadouts();
   updateMarkerToolUi();
-  addFeed("READY", "Connecting to headset telemetry endpoints");
+  addFeed("READY", "Connecting to Asset telemetry endpoints");
   state.endpoints.forEach(connectHeadset);
   window.setInterval(pruneExpiredMarkers, 1000);
 })();

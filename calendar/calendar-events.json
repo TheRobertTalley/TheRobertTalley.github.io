@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-21T22:31:49.738Z",
+  "updatedAt": "2026-08-21T23:30:12.237Z",
   "events": [
     {
       "title": "Force Dynamics (Classroom 1/Range 1)",
@@ -688,14 +688,14 @@
       "location": "Hall County Range"
     },
     {
-      "title": "FBI Firearms (Range 1)",
+      "title": "Gainesville City Schools (Range 1/Tirehouse)",
       "start": "2026-10-14T00:00:00",
       "end": "2026-10-15T00:00:00",
       "allDay": true,
       "location": ""
     },
     {
-      "title": "Gainesville City Schools (Range 1/Tirehouse)",
+      "title": "FBI Firearms (Range 1)",
       "start": "2026-10-14T00:00:00",
       "end": "2026-10-15T00:00:00",
       "allDay": true,
@@ -744,16 +744,16 @@
       "location": "Hall County Range"
     },
     {
-      "title": "Combat Shotgun (Range 1/Tirehouse)",
+      "title": "UOF/De-Escalation - Make Up (Classroom 1)",
       "start": "2026-10-19T00:00:00",
-      "end": "2026-10-20T00:00:00",
+      "end": "2026-10-23T00:00:00",
       "allDay": true,
       "location": ""
     },
     {
-      "title": "UOF/De-Escalation - Make Up (Classroom 1)",
+      "title": "Combat Shotgun (Range 1/Tirehouse)",
       "start": "2026-10-19T00:00:00",
-      "end": "2026-10-23T00:00:00",
+      "end": "2026-10-20T00:00:00",
       "allDay": true,
       "location": ""
     },

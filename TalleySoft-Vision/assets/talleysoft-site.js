@@ -924,6 +924,46 @@
     layers.directions.set(marker.id, group);
   }
 
+  function nodeMarkerKind(node) {
+    return node.source === "browser"
+      ? "browser"
+      : node.isLocal
+        ? "headset"
+        : "tracker";
+  }
+
+  function refreshNodeMarkerPositions() {
+    const groups = new Map();
+    Array.from(state.nodes.values()).forEach((node) => {
+      const key = `${Math.round(node.lat * 10000)}:${Math.round(node.lon * 10000)}`;
+      const group = groups.get(key) || [];
+      group.push(node);
+      groups.set(key, group);
+    });
+    groups.forEach((group) => {
+      group.sort((left, right) => left.label.localeCompare(right.label));
+      group.forEach((node, index) => {
+        let layer = layers.nodes.get(node.id);
+        if (!layer) {
+          layer = L.marker([node.lat, node.lon]).addTo(map);
+          layers.nodes.set(node.id, layer);
+        }
+        let displayLatLng = L.latLng(node.lat, node.lon);
+        if (group.length > 1) {
+          const origin = map.latLngToLayerPoint(displayLatLng);
+          const offset = (index - (group.length - 1) / 2) * 38;
+          displayLatLng = map.layerPointToLatLng(origin.add([0, offset]));
+        }
+        layer
+          .setLatLng(displayLatLng)
+          .setIcon(iconFor(nodeMarkerKind(node), node.label))
+          .bindPopup(nodePopup(node));
+      });
+    });
+  }
+
+  map.on("zoomend", refreshNodeMarkerPositions);
+
   function updateNode(input, endpoint) {
     const lat = normalizeNumber(input.lat ?? input.latitude);
     const lon = normalizeNumber(input.lon ?? input.longitude);
@@ -966,21 +1006,7 @@
       state.didAutoCenter = true;
     }
 
-    let layer = layers.nodes.get(id);
-    const iconKind = node.source === "browser"
-      ? "browser"
-      : node.isLocal
-        ? "headset"
-        : "tracker";
-    if (!layer) {
-      layer = L.marker([lat, lon], { icon: iconFor(iconKind, label) })
-        .addTo(map);
-      layers.nodes.set(id, layer);
-    }
-    layer
-      .setLatLng([lat, lon])
-      .setIcon(iconFor(iconKind, label))
-      .bindPopup(nodePopup(node));
+    refreshNodeMarkerPositions();
     renderHeadsetList();
     updateMetrics();
     updateReadouts();

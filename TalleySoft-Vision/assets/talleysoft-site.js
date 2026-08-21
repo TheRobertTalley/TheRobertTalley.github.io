@@ -533,9 +533,18 @@
       const node = Array.from(state.nodes.values()).find((candidate) =>
         candidate.endpoint === endpoint && candidate.isLocal);
       item.classList.toggle("is-selected", Boolean(node && node.id === state.selectedNodeId));
-      label.textContent = endpointLabel(endpoint);
+      label.textContent = node ? node.label : endpointLabel(endpoint);
+      label.title = node ? `${node.label} - ${endpointLabel(endpoint)}` : endpointLabel(endpoint);
       status.textContent = headset.status || "Saved";
       status.className = headset.connected ? "good-text" : "warn-text";
+      item.addEventListener("click", () => {
+        if (!node) {
+          return;
+        }
+        state.selectedNodeId = node.id;
+        addFeed("ASSET", `Selected ${node.label}`);
+        renderHeadsetList();
+      });
       center.type = "button";
       center.textContent = "Center";
       center.disabled = !node;

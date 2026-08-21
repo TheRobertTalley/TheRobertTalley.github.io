@@ -101,12 +101,12 @@
     browser: "#4ddfea"
   };
 
-  function iconFor(kind, label, selected = false) {
+  function iconFor(kind, label, selected = false, labelOffset = 0) {
     const safeLabel = escapeHtml(label || kind.toUpperCase());
     const color = colors[kind] || colors.location;
     return L.divIcon({
       className: `tsv-marker${selected ? " is-selected" : ""}`,
-      html: `<span style="--marker-color:${color}">${symbolFor(kind)}</span><b>${safeLabel}</b>`,
+      html: `<span style="--marker-color:${color}">${symbolFor(kind)}</span><b style="transform:translateY(${labelOffset}px)">${safeLabel}</b>`,
       iconSize: [90, 30],
       iconAnchor: [12, 15]
     });
@@ -948,15 +948,13 @@
           layer = L.marker([node.lat, node.lon]).addTo(map);
           layers.nodes.set(node.id, layer);
         }
-        let displayLatLng = L.latLng(node.lat, node.lon);
+        let labelOffset = 0;
         if (group.length > 1) {
-          const origin = map.latLngToLayerPoint(displayLatLng);
-          const offset = (index - (group.length - 1) / 2) * 38;
-          displayLatLng = map.layerPointToLatLng(origin.add([0, offset]));
+          labelOffset = (index - (group.length - 1) / 2) * 38;
         }
         layer
-          .setLatLng(displayLatLng)
-          .setIcon(iconFor(nodeMarkerKind(node), node.label))
+          .setLatLng([node.lat, node.lon])
+          .setIcon(iconFor(nodeMarkerKind(node), node.label, false, labelOffset))
           .bindPopup(nodePopup(node));
       });
     });

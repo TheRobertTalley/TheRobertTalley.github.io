@@ -250,9 +250,7 @@ h2 {
 }
 
 .tsv-marker {
-  display: flex;
-  align-items: center;
-  gap: 0.32rem;
+  position: relative;
   color: var(--text);
   white-space: nowrap;
 }
@@ -260,6 +258,10 @@ h2 {
 .tsv-marker span {
   display: grid;
   place-items: center;
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
   width: 1.55rem;
   height: 1.55rem;
   border: 2px solid var(--marker-color);
@@ -275,6 +277,10 @@ h2 {
 }
 
 .tsv-marker b {
+  position: absolute;
+  left: 1.87rem;
+  top: 50%;
+  transform: translateY(calc(-50% + var(--label-offset, 0px)));
   border: 1px solid rgba(228, 255, 243, 0.24);
   border-radius: 4px;
   background: rgba(5, 10, 8, 0.78);

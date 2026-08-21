@@ -482,13 +482,17 @@
 
   function setHeadsetStatus(endpoint, status, connected) {
     const existing = state.headsets.get(endpoint) || {};
+    const nextConnected = Boolean(connected);
+    const changed = existing.status !== status || existing.connected !== nextConnected;
     existing.endpoint = endpoint;
     existing.status = status;
-    existing.connected = Boolean(connected);
+    existing.connected = nextConnected;
     existing.lastSeen = existing.connected ? Date.now() : existing.lastSeen;
     state.headsets.set(endpoint, existing);
     updateConnectionState();
-    renderHeadsetList();
+    if (changed) {
+      renderHeadsetList();
+    }
   }
 
   function updateConnectionState() {

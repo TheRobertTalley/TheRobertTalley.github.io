@@ -104,9 +104,12 @@
   function iconFor(kind, label, selected = false, labelOffset = 0) {
     const safeLabel = escapeHtml(label || kind.toUpperCase());
     const color = colors[kind] || colors.location;
+    const labelStyle = labelOffset === 0
+      ? ""
+      : ` style="position:absolute;left:1.87rem;top:50%;transform:translateY(calc(-50% + ${labelOffset}px));"`;
     return L.divIcon({
       className: `tsv-marker${selected ? " is-selected" : ""}`,
-      html: `<span style="--marker-color:${color}">${symbolFor(kind)}</span><b style="transform:translateY(${labelOffset}px)">${safeLabel}</b>`,
+      html: `<span style="--marker-color:${color}">${symbolFor(kind)}</span><b${labelStyle}>${safeLabel}</b>`,
       iconSize: [90, 30],
       iconAnchor: [12, 15]
     });
@@ -950,7 +953,7 @@
         }
         let labelOffset = 0;
         if (group.length > 1) {
-          labelOffset = (index - (group.length - 1) / 2) * 38;
+          labelOffset = (index - (group.length - 1) / 2) * 56;
         }
         layer
           .setLatLng([node.lat, node.lon])

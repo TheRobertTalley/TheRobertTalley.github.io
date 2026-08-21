@@ -1104,6 +1104,25 @@
     const existing = state.markers.get(marker.id);
     state.markers.set(marker.id, marker);
 
+    if (kind === "route") {
+      const pointLayer = layers.markers.get(marker.id);
+      if (pointLayer) {
+        pointLayer.remove();
+        layers.markers.delete(marker.id);
+      }
+      clearDirection(marker.id);
+      rebuildRoutes();
+      if (!existing ||
+          existing.lat !== marker.lat ||
+          existing.lon !== marker.lon ||
+          existing.label !== marker.label ||
+          existing.kind !== marker.kind) {
+        addFeed("ROUTE", `${label} point ${lat.toFixed(5)}, ${lon.toFixed(5)}`);
+      }
+      updateMetrics();
+      return;
+    }
+
     let layer = layers.markers.get(marker.id);
     if (!layer) {
       layer = L.marker([lat, lon], {
@@ -1117,9 +1136,6 @@
       .bindPopup(markerPopup(marker));
 
     updateDirectionOverlay(marker);
-    if (kind === "route") {
-      updateRoute(label);
-    }
     if (!existing ||
         existing.lat !== marker.lat ||
         existing.lon !== marker.lon ||
@@ -1148,13 +1164,27 @@
     if (!route) {
       route = L.polyline(routePoints, {
         color: colors.route,
-        weight: 3,
-        opacity: 0.86
+        weight: 5,
+        opacity: 0.94,
+        lineCap: "round",
+        lineJoin: "round"
       }).addTo(map);
+      route.bindTooltip(escapeHtml(label), {
+        permanent: true,
+        direction: "center",
+        className: "route-label",
+        opacity: 1
+      });
       layers.routes.set(label, route);
-      return;
+    } else {
+      route.setLatLngs(routePoints);
+      route.setTooltipContent(escapeHtml(label));
     }
-    route.setLatLngs(routePoints);
+    const tooltip = route.getTooltip();
+    if (tooltip) {
+      tooltip.setLatLng(route.getCenter());
+      route.openTooltip();
+    }
   }
 
   function autoCenterFromFeatures() {

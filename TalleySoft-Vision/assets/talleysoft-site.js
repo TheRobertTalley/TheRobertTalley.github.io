@@ -1160,31 +1160,22 @@
     if (routePoints.length < 2) {
       return;
     }
-    let route = layers.routes.get(label);
-    if (!route) {
-      route = L.polyline(routePoints, {
-        color: colors.route,
-        weight: 5,
-        opacity: 0.94,
-        lineCap: "round",
-        lineJoin: "round"
-      }).addTo(map);
-      route.bindTooltip(escapeHtml(label), {
-        permanent: true,
-        direction: "center",
-        className: "route-label",
-        opacity: 1
-      });
-      layers.routes.set(label, route);
-    } else {
-      route.setLatLngs(routePoints);
-      route.setTooltipContent(escapeHtml(label));
+    const existingRoute = layers.routes.get(label);
+    if (existingRoute) {
+      existingRoute.remove();
     }
-    const tooltip = route.getTooltip();
-    if (tooltip) {
-      tooltip.setLatLng(route.getCenter());
-      route.openTooltip();
-    }
+    const line = L.polyline(routePoints, {
+      color: colors.route,
+      weight: 5,
+      opacity: 0.94,
+      lineCap: "round",
+      lineJoin: "round"
+    });
+    const routeLabel = L.marker(line.getCenter(), {
+      icon: iconFor("route", label),
+      interactive: false
+    });
+    layers.routes.set(label, L.featureGroup([line, routeLabel]).addTo(map));
   }
 
   function autoCenterFromFeatures() {

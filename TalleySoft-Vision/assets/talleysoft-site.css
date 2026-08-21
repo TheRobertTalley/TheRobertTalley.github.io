@@ -150,6 +150,18 @@ nav a:hover {
   padding: 1rem;
   border-bottom: 1px solid var(--line);
   background: var(--panel-strong);
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.map-toolbar > :first-child {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+.map-toolbar .tool-actions {
+  flex: 1 1 100%;
+  justify-content: flex-end;
 }
 
 h1,

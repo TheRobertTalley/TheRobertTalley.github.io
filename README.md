@@ -2,7 +2,7 @@
 
 This repository hosts public GitHub Pages projects for `theroberttalley.github.io`.
 
-- BlackBox Airspace Radar: https://theroberttalley.github.io/blackbox-airspace-radar/
+- BlackBox Airspace Radar: https://blackbox.tailade622.ts.net/ (private Tailscale access)
 
 The smart calendar display is a static webpage built for a TV or Fire Stick browser:
 

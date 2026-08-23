@@ -71,6 +71,44 @@
         text-decoration: none;
       }
 
+      .radar-link {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        margin: -8px;
+        border: 1px solid rgba(92, 224, 193, 0.4);
+        border-radius: 7px;
+        background:
+          radial-gradient(circle at 92% 20%, rgba(92, 224, 193, 0.16), transparent 38%),
+          #0b1a1a;
+        padding: 18px;
+      }
+
+      .radar-link span,
+      .radar-link small {
+        display: block;
+      }
+
+      .radar-link small {
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 1.4;
+      }
+
+      .radar-link em {
+        border: 1px solid rgba(92, 224, 193, 0.35);
+        border-radius: 999px;
+        padding: 9px 12px;
+        color: var(--teal);
+        font-size: 11px;
+        font-style: normal;
+        letter-spacing: 0.12em;
+        white-space: nowrap;
+      }
+
       .donation {
         display: flex;
         align-items: center;
@@ -95,6 +133,11 @@
           align-items: flex-start;
           flex-direction: column;
         }
+
+        .radar-link {
+          align-items: flex-start;
+          flex-direction: column;
+        }
       }
     </style>
   </head>
@@ -104,6 +147,13 @@
       <p>Public static pages and display projects hosted from GitHub Pages.</p>
 
       <section class="links" aria-label="Pages">
+        <a class="radar-link" href="./blackbox-airspace-radar/">
+          <span>
+            BlackBox Airspace Radar
+            <small>Receive-only ADS-B aircraft map centered on Lula, Georgia. Live receiver data stays private.</small>
+          </span>
+          <em>Open radar</em>
+        </a>
         <a href="./Tub-Commander-Web-Flasher/">Tub Commander Web Flasher</a>
         <a href="./Chicken-Chat-Web-Flasher/">Chicken Chat Web Flasher</a>
         <a href="./calendar/">Smart Calendar Display</a>

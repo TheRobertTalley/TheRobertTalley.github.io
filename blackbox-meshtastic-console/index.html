@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#071015" />
+    <meta name="description" content="BlackBox Meshtastic message, node, telemetry, and Ollama operator console" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://blackbox.tailade622.ts.net:8443 http://127.0.0.1:8790; img-src 'self' data: https://tile.openstreetmap.org; style-src 'self' 'unsafe-inline'; font-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'" />
+    <title>BlackBox Mesh Comms</title>
+    <script type="module" crossorigin src="./assets/index-D1XH9NoT.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-D5ZbMH68.css">
+  </head>
+  <body>
+    <div id="app">
+      <header class="topbar">
+        <a class="brand" href="https://theroberttalley.github.io/" aria-label="Return to TheRobertTalley Pages">
+          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span><strong>BLACKBOX</strong><small>MESH COMMS</small></span>
+        </a>
+        <div class="mission-clock">
+          <span>LOCAL MISSION TIME</span>
+          <strong id="clock">--:--:--</strong>
+        </div>
+        <button id="connection-button" class="connection is-offline" type="button" aria-haspopup="dialog">
+          <span class="status-light" aria-hidden="true"></span>
+          <span id="connection-label">CONSOLE LOCKED</span>
+        </button>
+      </header>
+
+      <main class="workspace">
+        <section id="map" aria-label="Meshtastic node map"></section>
+
+        <aside class="telemetry-panel glass" aria-label="BlackBox mesh telemetry">
+          <p class="eyebrow">RADIO / COM4</p>
+          <div class="metric primary"><span>ACTIVE</span><strong id="active-count">0</strong><small>NODES / 15 MIN</small></div>
+          <div class="metric-row">
+            <div class="metric"><span>KNOWN</span><strong id="known-count">0</strong></div>
+            <div class="metric"><span>MESSAGES</span><strong id="message-count">0</strong></div>
+          </div>
+          <div class="receiver-line"><span>NODE</span><strong id="local-node">BLACKBOX</strong></div>
+          <div class="receiver-line"><span>CHANNEL</span><strong id="channel-summary">WAITING</strong></div>
+          <div class="bot-lock" id="bot-status"><span aria-hidden="true">◇</span> OLLAMA CHECKING</div>
+          <p class="keyword-line">ASK WITH <strong id="keyword">@BLACKBOX</strong></p>
+        </aside>
+
+        <aside class="comms-panel glass" aria-label="Mesh communications">
+          <div class="panel-heading">
+            <div><p class="eyebrow">MESHTASTIC NETWORK</p><h1>COMMS LOG</h1></div>
+            <button id="export-button" class="mini-button" type="button" title="Export the open log as CSV">EXPORT</button>
+          </div>
+          <div class="tabs" role="tablist" aria-label="Console logs">
+            <button class="tab active" type="button" role="tab" aria-selected="true" data-tab="messages">MESSAGES <span id="messages-tab-count">0</span></button>
+            <button class="tab" type="button" role="tab" aria-selected="false" data-tab="nodes">NODES <span id="nodes-tab-count">0</span></button>
+            <button class="tab" type="button" role="tab" aria-selected="false" data-tab="events">EVENTS <span id="events-tab-count">0</span></button>
+          </div>
+          <div id="log-list" class="log-list" tabindex="0" aria-live="polite">
+            <div class="empty-list"><strong>OPERATOR ACCESS REQUIRED</strong><span>Open the connection control and enter the BlackBox operator key.</span></div>
+          </div>
+        </aside>
+
+        <section class="actionbar glass" aria-label="Mesh actions">
+          <div class="link-summary"><p class="eyebrow">LINK STATUS</p><strong id="last-update">NO API DATA</strong></div>
+          <div class="actions">
+            <button id="compose-button" class="primary-action" type="button" disabled><span>＋</span> NEW MESSAGE</button>
+            <button id="radio-action-button" type="button" disabled><span>⌁</span> RADIO ACTION</button>
+            <button id="recenter-button" type="button"><span>⌖</span> RECENTER</button>
+          </div>
+        </section>
+      </main>
+
+      <dialog id="settings-dialog" class="console-dialog">
+        <form id="settings-form" method="dialog">
+          <div class="dialog-heading"><div><p class="eyebrow">PRIVATE OPERATOR LINK</p><h2>Connect BlackBox</h2></div><button class="icon-button" type="button" data-close-dialog aria-label="Close">×</button></div>
+          <p>The public page is locked against radio transmission and private mesh logs. The key stays only in this browser tab.</p>
+          <label>BlackBox API URL<input id="api-url" type="url" placeholder="https://blackbox.example.ts.net:8443" spellcheck="false" required /></label>
+          <label>Operator key
+            <span class="password-field"><input id="operator-key" type="password" autocomplete="off" spellcheck="false" required /><button id="show-key" type="button" aria-label="Show operator key">SHOW</button></span>
+          </label>
+          <div id="settings-error" class="form-error" role="alert"></div>
+          <div class="dialog-actions"><button id="disconnect-button" class="secondary-button" type="button">Disconnect</button><button class="primary-button" value="default" type="submit">Connect</button></div>
+        </form>
+      </dialog>
+
+      <dialog id="compose-dialog" class="console-dialog">
+        <form id="compose-form" method="dialog">
+          <div class="dialog-heading"><div><p class="eyebrow">MESHTASTIC TX</p><h2>New message</h2></div><button class="icon-button" type="button" data-close-dialog aria-label="Close">×</button></div>
+          <div class="form-grid">
+            <label>Recipient<select id="message-recipient"><option value="^all">Broadcast</option></select></label>
+            <label>Channel<select id="message-channel"></select></label>
+          </div>
+          <label>Message<textarea id="message-text" rows="4" maxlength="200" placeholder="Type a mesh message" required></textarea></label>
+          <div class="message-meta"><label class="check-label"><input id="message-ack" type="checkbox" checked /> Request delivery acknowledgement</label><span id="message-length">0 / 200 BYTES</span></div>
+          <div id="compose-error" class="form-error" role="alert"></div>
+          <div class="dialog-actions"><button class="secondary-button" type="button" data-close-dialog>Cancel</button><button class="primary-button" value="default" type="submit">Transmit</button></div>
+        </form>
+      </dialog>
+
+      <dialog id="action-dialog" class="console-dialog">
+        <form id="action-form" method="dialog">
+          <div class="dialog-heading"><div><p class="eyebrow">MESH CONTROL</p><h2>Radio action</h2></div><button class="icon-button" type="button" data-close-dialog aria-label="Close">×</button></div>
+          <div class="form-grid">
+            <label>Action<select id="action-type">
+              <option value="device_metrics">Request device metrics</option>
+              <option value="environment_metrics">Request environment metrics</option>
+              <option value="air_quality_metrics">Request air quality</option>
+              <option value="power_metrics">Request power metrics</option>
+              <option value="local_stats">Request local stats</option>
+              <option value="traceroute">Run traceroute</option>
+              <option value="waypoint">Share waypoint</option>
+            </select></label>
+            <label>Channel<select id="action-channel"></select></label>
+          </div>
+          <label>Target<select id="action-target"></select></label>
+          <label id="hop-field" class="conditional-field">Hop limit<input id="hop-limit" type="number" min="1" max="7" value="7" /></label>
+          <fieldset id="waypoint-fields" class="conditional-field waypoint-fields">
+            <legend>Waypoint</legend>
+            <div class="form-grid"><label>Name<input id="waypoint-name" maxlength="30" /></label><label>Expires<select id="waypoint-expiry"><option value="3600">1 hour</option><option value="86400" selected>24 hours</option><option value="604800">7 days</option></select></label></div>
+            <label>Description<input id="waypoint-description" maxlength="80" /></label>
+            <div class="form-grid"><label>Latitude<input id="waypoint-latitude" type="number" min="-90" max="90" step="0.000001" /></label><label>Longitude<input id="waypoint-longitude" type="number" min="-180" max="180" step="0.000001" /></label></div>
+          </fieldset>
+          <div id="action-error" class="form-error" role="alert"></div>
+          <div class="dialog-actions"><button class="secondary-button" type="button" data-close-dialog>Cancel</button><button class="primary-button" value="default" type="submit">Send action</button></div>
+        </form>
+      </dialog>
+
+      <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    </div>
+  </body>
+</html>

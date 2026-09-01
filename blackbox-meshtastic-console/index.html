@@ -7,8 +7,8 @@
     <meta name="description" content="BlackBox Meshtastic message, node, telemetry, and Ollama operator console" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://blackbox.tailade622.ts.net:8443 http://127.0.0.1:8790; img-src 'self' data: https://tile.openstreetmap.org; style-src 'self' 'unsafe-inline'; font-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'" />
     <title>BlackBox Mesh Comms</title>
-    <script type="module" crossorigin src="./assets/index-D1XH9NoT.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-D5ZbMH68.css">
+    <script type="module" crossorigin src="./assets/index-mwHwOqPN.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-BtWEjdFw.css">
   </head>
   <body>
     <div id="app">
@@ -54,14 +54,14 @@
             <button class="tab" type="button" role="tab" aria-selected="false" data-tab="events">EVENTS <span id="events-tab-count">0</span></button>
           </div>
           <div id="log-list" class="log-list" tabindex="0" aria-live="polite">
-            <div class="empty-list"><strong>OPERATOR ACCESS REQUIRED</strong><span>Open the connection control and enter the BlackBox operator key.</span></div>
+            <div class="empty-list"><strong>READY TO TRANSMIT</strong><span>Press Connect &amp; Send, enter the operator key, then choose Broadcast or a specific node.</span></div>
           </div>
         </aside>
 
         <section class="actionbar glass" aria-label="Mesh actions">
           <div class="link-summary"><p class="eyebrow">LINK STATUS</p><strong id="last-update">NO API DATA</strong></div>
           <div class="actions">
-            <button id="compose-button" class="primary-action" type="button" disabled><span>＋</span> NEW MESSAGE</button>
+            <button id="compose-button" class="primary-action" type="button"><span aria-hidden="true">＋</span><b id="compose-label">CONNECT &amp; SEND</b></button>
             <button id="radio-action-button" type="button" disabled><span>⌁</span> RADIO ACTION</button>
             <button id="recenter-button" type="button"><span>⌖</span> RECENTER</button>
           </div>
@@ -71,9 +71,14 @@
       <dialog id="settings-dialog" class="console-dialog">
         <form id="settings-form" method="dialog">
           <div class="dialog-heading"><div><p class="eyebrow">PRIVATE OPERATOR LINK</p><h2>Connect BlackBox</h2></div><button class="icon-button" type="button" data-close-dialog aria-label="Close">×</button></div>
-          <p>The public page is locked against radio transmission and private mesh logs. The key stays only in this browser tab.</p>
+          <p>Connect once to send messages and view the private mesh log. The operator key stays only in this browser tab.</p>
+          <ol class="connect-steps">
+            <li>Enter the BlackBox operator key.</li>
+            <li>Allow Local Network Access if your browser asks.</li>
+            <li>Choose Broadcast or a specific node, then transmit.</li>
+          </ol>
           <label>BlackBox API URL<input id="api-url" type="url" placeholder="https://blackbox.example.ts.net:8443" spellcheck="false" required /></label>
-          <label>Operator key
+          <label>Operator key · required to transmit
             <span class="password-field"><input id="operator-key" type="password" autocomplete="off" spellcheck="false" required /><button id="show-key" type="button" aria-label="Show operator key">SHOW</button></span>
           </label>
           <div id="settings-error" class="form-error" role="alert"></div>

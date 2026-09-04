@@ -3,88 +3,120 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#171815">
   <title>Chicken Chat Web Flasher</title>
-  <meta name="description" content="Flash Chicken Chat product firmware from the browser.">
-  <link rel="stylesheet" href="../assets/iot-flasher.css">
+  <meta name="description" content="Install Chicken Chat firmware on Feeder Bin Bot and Cluck-o-Magic hardware from Chrome or Edge.">
+  <link rel="icon" type="image/png" href="assets/chicken-chat-logo.png">
+  <link rel="stylesheet" href="assets/chicken-chat-flasher.css">
   <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
 </head>
 <body>
-  <header class="topbar">
-    <a class="brand" href="../">
-      <span class="brand-mark">CC</span>
+  <header class="site-header">
+    <a class="wordmark" href="../" aria-label="TheRobertTalley Pages home">
+      <img src="assets/chicken-chat-logo.png" alt="">
       <span>
         <strong>Chicken Chat</strong>
-        <small>Web Flasher</small>
+        <small>Field firmware</small>
       </span>
     </a>
-    <nav aria-label="Primary">
+    <nav aria-label="Other tools">
       <a href="../Tub-Commander-Web-Flasher/">Tub Commander</a>
       <a href="../TalleySoft-Vision/">TalleySoft Vision</a>
     </nav>
   </header>
 
   <main>
-    <section class="hero">
-      <div class="hero-copy">
-        <p class="eyebrow">Farm IoT flashing</p>
-        <h1>Chicken Chat Web Flasher</h1>
-        <p class="lead">
-          Flash Chicken Chat product firmware from Chrome or Edge using browser serial access.
-        </p>
+    <section class="intro" aria-labelledby="page-title">
+      <div class="intro-copy">
+        <p class="kicker">Browser flasher <span aria-hidden="true">/</span> ESP32</p>
+        <h1 id="page-title">Chicken Chat<br>Firmware Bay</h1>
+        <p class="lead">Load the right firmware straight from Chrome or Edge. No installer, command line, or guesswork.</p>
+        <div class="quick-facts" aria-label="Requirements">
+          <span>Chrome or Edge</span>
+          <span>USB data cable</span>
+          <span>Desktop computer</span>
+        </div>
       </div>
-      <div class="logo-panel">
-        <img src="assets/chicken-chat-logo.png" alt="Chicken Chat logo">
+
+      <div class="brand-plate" aria-label="Chicken Chat">
+        <span class="plate-label">Poultry systems / firmware service</span>
+        <img src="assets/chicken-chat-logo.png" alt="Chicken Chat, two roosters facing each other with speech bubbles">
+        <span class="plate-code">CC-FW&nbsp;&nbsp;•&nbsp;&nbsp;USB SERIAL</span>
       </div>
     </section>
 
-    <section class="content">
-      <div class="flash-grid" aria-label="Chicken Chat firmware targets">
-        <article class="flash-card">
-          <div class="card-top">
+    <section class="flasher" aria-labelledby="choose-firmware">
+      <div class="section-heading">
+        <div>
+          <p class="section-number">01</p>
+          <h2 id="choose-firmware">Choose your hardware</h2>
+        </div>
+        <p>Match the name on the controller before connecting.</p>
+      </div>
+
+      <div class="flash-grid">
+        <article class="flash-card feeder-card">
+          <header class="card-header">
             <div>
-              <h2>Feeder Bin Bot</h2>
-              <p class="muted">ACEBOTT ESP32 Max prototype shield firmware.</p>
+              <p class="hardware-family">Chicken Chat controller</p>
+              <h3>Feeder Bin Bot</h3>
             </div>
-            <span class="chip">ESP32</span>
-          </div>
+            <span class="board-tag">ESP32</span>
+          </header>
+          <p class="card-summary">Firmware for the ACEBOTT ESP32 Max prototype shield.</p>
+          <dl class="specs">
+            <div><dt>Build</dt><dd>Feeder Bin Bot</dd></div>
+            <div><dt>Flash</dt><dd>4 MB</dd></div>
+            <div><dt>Mode</dt><dd>DIO / 40 MHz</dd></div>
+          </dl>
           <div class="install-area">
             <esp-web-install-button manifest="manifest-feeder-bin-bot.json"></esp-web-install-button>
+            <p>Connect the board only when the installer asks.</p>
           </div>
-          <ul class="spec-list">
-            <li><span>Build</span><b>acebot-esp32-max-v1_0-prototype-shield</b></li>
-            <li><span>Flash</span><b>4 MB</b></li>
-            <li><span>Mode</span><b>DIO 40 MHz</b></li>
-          </ul>
         </article>
 
-        <article class="flash-card">
-          <div class="card-top">
+        <article class="flash-card shaker-card">
+          <header class="card-header">
             <div>
-              <h2>Cluck-o-Magic</h2>
-              <p class="muted">Bin shaker prototype shield firmware.</p>
+              <p class="hardware-family">Chicken Chat controller</p>
+              <h3>Cluck-o-Magic</h3>
             </div>
-            <span class="chip">ESP32</span>
-          </div>
+            <span class="board-tag">ESP32</span>
+          </header>
+          <p class="card-summary">Firmware for the bin shaker prototype shield.</p>
+          <dl class="specs">
+            <div><dt>Build</dt><dd>Cluck-o-Magic</dd></div>
+            <div><dt>Flash</dt><dd>4 MB</dd></div>
+            <div><dt>Mode</dt><dd>DIO / 40 MHz</dd></div>
+          </dl>
           <div class="install-area">
             <esp-web-install-button manifest="manifest-cluck-o-magic.json"></esp-web-install-button>
+            <p>Connect the board only when the installer asks.</p>
           </div>
-          <ul class="spec-list">
-            <li><span>Build</span><b>cluck-o-magic-prototype-shield</b></li>
-            <li><span>Flash</span><b>4 MB</b></li>
-            <li><span>Mode</span><b>DIO 40 MHz</b></li>
-          </ul>
         </article>
       </div>
+    </section>
 
-      <section class="note-band">
-        <h2>Flash Steps</h2>
-        <ol>
-          <li>Use Chrome or Edge on a desktop computer.</li>
-          <li>Plug in the product with a USB data cable.</li>
-          <li>Select the matching firmware and allow browser serial access.</li>
-        </ol>
-      </section>
+    <section class="procedure" aria-labelledby="flash-procedure">
+      <div class="section-heading compact">
+        <div>
+          <p class="section-number">02</p>
+          <h2 id="flash-procedure">Flash procedure</h2>
+        </div>
+        <p>Three steps. Keep the USB cable connected until the install is complete.</p>
+      </div>
+      <ol class="steps">
+        <li><span>1</span><div><strong>Pick the controller</strong><p>Select Install on the matching card above.</p></div></li>
+        <li><span>2</span><div><strong>Choose the serial port</strong><p>Allow browser access to the connected ESP32.</p></div></li>
+        <li><span>3</span><div><strong>Let it finish</strong><p>Do not unplug or close the page during the flash.</p></div></li>
+      </ol>
+      <p class="erase-note"><strong>Fresh install:</strong> Flashing replaces the firmware and may erase settings stored on the controller.</p>
     </section>
   </main>
+
+  <footer>
+    <span>Chicken Chat</span>
+    <span>Built for working hardware.</span>
+  </footer>
 </body>
 </html>

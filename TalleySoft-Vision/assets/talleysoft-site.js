@@ -1,4 +1,12 @@
 (function () {
+  const topbar = document.querySelector(".topbar");
+  if (topbar) {
+    const syncHeaderHeight = () => document.documentElement.style.setProperty(
+      "--sticky-header-height", `${Math.ceil(topbar.getBoundingClientRect().height)}px`);
+    syncHeaderHeight();
+    if (window.ResizeObserver) new window.ResizeObserver(syncHeaderHeight).observe(topbar);
+    else window.addEventListener("resize", syncHeaderHeight);
+  }
   const mapElement = document.getElementById("ops-map");
   const feed = document.getElementById("event-feed");
   if (!mapElement) {
@@ -44,6 +52,8 @@
     didAutoCenter: false,
     didBrowserCenter: false,
     browserLocationErrorShown: false,
+    testViewRestore: null,
+    seenMessages: new Map(),
     nodes: new Map(),
     markers: new Map(),
     endpoints: [],
@@ -52,12 +62,14 @@
     endpointSnapshots: new Map()
   };
 
+  let meshMessaging = null;
   const telemetryManager = window.TsvTelemetry.createManager({
     onState(endpoint, status, live, socket) {
       const headset = state.headsets.get(endpoint) || {};
       headset.socket = socket;
       state.headsets.set(endpoint, headset);
       setHeadsetStatus(endpoint, status, live);
+      if (meshMessaging) meshMessaging.setConnection(endpoint, live);
       updateReadouts();
     },
     onSnapshot: handleMessage
@@ -107,6 +119,10 @@
     tracker: "#ffd447",
     browser: "#4ddfea"
   };
+
+  meshMessaging = window.TsvMeshMessaging && window.TsvMeshMessaging.createPanel({
+    root: document.getElementById("mesh-messaging"), fetchOptions: localFetchOptions
+  });
 
   function iconFor(kind, label, selected = false, labelOffset = 0) {
     const safeLabel = escapeHtml(label || kind.toUpperCase());
@@ -171,8 +187,17 @@
   }
 
   function normalizeNumber(value) {
+    if ((typeof value !== "number" && typeof value !== "string") ||
+        (typeof value === "string" && value.trim() === "")) {
+      return null;
+    }
     const number = Number(value);
     return Number.isFinite(number) ? number : null;
+  }
+
+  function hasValidCoordinates(lat, lon) {
+    return Number.isFinite(lat) && lat >= -90 && lat <= 90 &&
+      Number.isFinite(lon) && lon >= -180 && lon <= 180;
   }
 
   function startOfflineMapFallback(container, eventFeed) {
@@ -202,7 +227,7 @@
       window.location && window.location.hostname &&
       window.location.port === "8787"
         ? `${window.location.protocol}//${window.location.host}`
-        : "http://192.168.1.61:8787";
+        : null;
 
     function fallbackFeed(kind, message) {
       if (!eventFeed) {
@@ -223,13 +248,12 @@
     function coord(input) {
       const lat = normalizeNumber(input.lat ?? input.latitude);
       const lon = normalizeNumber(input.lon ?? input.longitude);
-      return lat === null || lon === null ? null : { lat, lon };
+      return hasValidCoordinates(lat, lon) ? { lat, lon } : null;
     }
 
     function center() {
       return (snapshot.center ? coord(snapshot.center) : null) ||
-        (snapshot.nodes || []).map(coord).find(Boolean) ||
-        { lat: 34.2981382, lon: -83.8257640 };
+        (snapshot.nodes || []).map(coord).find(Boolean) || null;
     }
 
     function offsetMeters(origin, point) {
@@ -305,10 +329,16 @@
     function draw() {
       const size = resize();
       const origin = center();
-      const range = rangeFor(origin);
       ctx.clearRect(0, 0, size.width, size.height);
       ctx.fillStyle = "#07110c";
       ctx.fillRect(0, 0, size.width, size.height);
+      if (!origin) {
+        ctx.fillStyle = "#dfffea";
+        ctx.font = "16px system-ui";
+        ctx.fillText("NO POSITION", 20, Math.max(36, size.height / 2));
+        return;
+      }
+      const range = rangeFor(origin);
       ctx.strokeStyle = "rgba(65,241,155,.16)";
       for (let step = 0.25; step <= 1; step += 0.25) {
         ctx.beginPath();
@@ -370,40 +400,15 @@
     }
 
     window.addEventListener("resize", draw);
+    document.querySelectorAll("button").forEach(button => { button.disabled = true; });
+    fallbackFeed("MAP", "Map files could not load. Reload the page to restore the map and controls.");
+    if (!endpoint) { draw(); return; }
     poll();
     window.setInterval(poll, 2000);
   }
 
   function normalizeEndpoint(value) {
-    let endpoint = String(value || "").trim();
-    if (!endpoint) {
-      return "";
-    }
-    endpoint = endpoint.replace(/\/$/, "");
-    if (/^https?:\/\//i.test(endpoint)) {
-      endpoint = endpoint.replace(/^http/i, "ws");
-    } else if (/^[a-z][a-z0-9+.-]*:\/\//i.test(endpoint) &&
-        !/^wss?:\/\//i.test(endpoint)) {
-      return "";
-    } else if (!/^wss?:\/\//i.test(endpoint)) {
-      endpoint = `ws://${endpoint}`;
-    }
-    try {
-      const url = new URL(endpoint);
-      if (!/^wss?:$/.test(url.protocol) || !url.hostname ||
-          url.username || url.password) {
-        return "";
-      }
-      if (!url.port) {
-        url.port = "8787";
-      }
-      url.pathname = "/";
-      url.search = "";
-      url.hash = "";
-      return url.toString().replace(/\/$/, "");
-    } catch (error) {
-      return "";
-    }
+    return window.TsvTelemetry.normalizeEndpoint(value);
   }
 
   function discoverDefaultEndpoints() {
@@ -421,15 +426,7 @@
   }
 
   function endpointKey(endpoint) {
-    try {
-      const url = new URL(endpoint);
-      const host = url.hostname.toLowerCase() === "localhost"
-        ? "127.0.0.1"
-        : url.hostname.toLowerCase();
-      return `${url.protocol}//${host}:${url.port || "8787"}`;
-    } catch (error) {
-      return endpoint;
-    }
+    return window.TsvTelemetry.endpointKey(endpoint);
   }
 
   function uniqueEndpoints(values) {
@@ -462,10 +459,8 @@
   }
 
   function loadEndpoints() {
-    if (!window.localStorage) {
-      return [];
-    }
     try {
+      if (!window.localStorage) return [];
       const saved = JSON.parse(window.localStorage.getItem("tsvHeadsetEndpoints") || "[]");
       if (Array.isArray(saved)) {
         return saved.map(normalizeEndpoint).filter(Boolean);
@@ -477,9 +472,9 @@
   }
 
   function saveEndpoints() {
-    if (window.localStorage) {
-      window.localStorage.setItem("tsvHeadsetEndpoints", JSON.stringify(state.endpoints));
-    }
+    try {
+      if (window.localStorage) window.localStorage.setItem("tsvHeadsetEndpoints", JSON.stringify(state.endpoints));
+    } catch (_) { addFeed("ASSET", "Browser storage is unavailable; addresses are kept for this session."); }
   }
 
   function endpointLabel(endpoint) {
@@ -527,6 +522,27 @@
     els.connectionPill.classList.toggle("warn", !live);
     els.metricRadio.textContent = live ? `${connected} live` : "Local";
     els.metricHeadsets.textContent = String(connected);
+    updateControlAvailability();
+  }
+
+  function updateControlAvailability() {
+    const connected = connectedHeadsets();
+    const viewingOnly = !connected.some(headset => headset.supportsCommands !== false);
+    document.querySelectorAll("[data-headset-control]").forEach(button => {
+      button.disabled = viewingOnly;
+      button.title = viewingOnly ? (connected.length ? "This connection allows viewing only. Use an endpoint with control access." : "Connect a headset to use controls.") : "";
+    });
+    const help = document.getElementById("connection-help");
+    if (help) {
+      help.hidden = !viewingOnly;
+      help.textContent = !connected.length ? "Connect a headset to use controls."
+        : connected.some(headset => headset.readOnly)
+          ? "This connection allows viewing only. Use an endpoint with headset control access to enable headset and radio controls."
+          : "Camera relays provide telemetry. Add a headset endpoint to use headset and radio controls.";
+    }
+    const markerSubmit = els.markerForm && els.markerForm.querySelector("button[type=submit]");
+    const markersViewOnly = !connected.some(headset => headset.supportsMarkers !== false && headset.supportsCommands !== false);
+    if (markerSubmit) markerSubmit.textContent = markersViewOnly ? "Preview Marker" : "Send Marker";
   }
 
   function renderHeadsetList() {
@@ -618,6 +634,9 @@
     disconnectHeadset(endpoint);
     state.endpoints = state.endpoints.filter((item) => item !== endpoint);
     state.headsets.delete(endpoint);
+    if (meshMessaging) meshMessaging.removeEndpoint(endpoint);
+    Array.from(state.nodes.values()).forEach(node => { if (node.endpoint === endpoint) removeNode(node.id); });
+    restoreAfterTestLocation();
     state.endpointSnapshots.delete(endpoint);
     stopSnapshotPolling(endpoint);
     saveEndpoints();
@@ -664,7 +683,7 @@
     try {
       const target = new URL(url);
       const host = target.hostname.toLowerCase();
-      return window.location.protocol !== "https:" ||
+      return target.protocol === "https:" || window.location.protocol !== "https:" ||
         Boolean(targetAddressSpaceForHost(host)) ||
         host === window.location.hostname.toLowerCase();
     } catch (error) {
@@ -850,7 +869,7 @@
   function updateNode(input, endpoint) {
     const lat = normalizeNumber(input.lat ?? input.latitude);
     const lon = normalizeNumber(input.lon ?? input.longitude);
-    if (lat === null || lon === null) {
+    if (!hasValidCoordinates(lat, lon)) {
       return;
     }
     const sourceId = String(input.id || input.nodeId || input.nodeNum || "local");
@@ -871,6 +890,7 @@
       updatedAt: now,
       positionUpdatedAt: window.TsvTelemetry.positionTime(input, now),
       positionCurrent: input.positionCurrent !== false,
+      testLocationExpiresUnix: normalizeNumber(input.testLocationExpiresUnix),
       isLocal: Boolean(input.isLocal)
     };
     const existing = state.nodes.get(id);
@@ -881,7 +901,7 @@
     if (node.isLocal || !state.latestNode || !state.latestNode.isLocal) {
       state.latestNode = node;
     }
-    if (node.isLocal &&
+    if (node.isLocal && !window.TsvTelemetry.isSyntheticPosition(node) &&
         els.markerLat && els.markerLon &&
         (!els.markerLat.value || !els.markerLon.value ||
          els.markerLat.value === defaultCenter[0].toFixed(6) ||
@@ -903,13 +923,16 @@
   function nodePopup(node) {
     const heading = node.heading === null ? "--" : `${Math.round(node.heading)} deg`;
     const accuracy = node.accuracyYards === null ? "--" : `${Math.round(node.accuracyYards)} yd`;
-    return `<strong>${escapeHtml(node.label)}</strong><br>Heading ${heading}<br>Accuracy ${accuracy}<br>${escapeHtml(node.source)}<br>${window.TsvTelemetry.positionCurrent(node) ? "Current position" : "Last known position; age may be unknown"}<br>${escapeHtml(endpointLabel(node.endpoint))}`;
+    const position = window.TsvTelemetry.isSyntheticPosition(node)
+      ? "TEST LOCATION: synthetic position, not a GPS fix"
+      : window.TsvTelemetry.positionCurrent(node) ? "Current position" : "Last known position; age may be unknown";
+    return `<strong>${escapeHtml(node.label)}</strong><br>Heading ${heading}<br>Accuracy ${accuracy}<br>${escapeHtml(node.source)}<br>${position}<br>${escapeHtml(endpointLabel(node.endpoint))}`;
   }
 
   function nodeKeyFromInput(input, endpoint) {
     const lat = normalizeNumber(input.lat ?? input.latitude);
     const lon = normalizeNumber(input.lon ?? input.longitude);
-    if (lat === null || lon === null) {
+    if (!hasValidCoordinates(lat, lon)) {
       return "";
     }
     const sourceId = String(input.id || input.nodeId || input.nodeNum || "local");
@@ -925,7 +948,7 @@
     }
     const lat = normalizeNumber(input.lat ?? input.latitude);
     const lon = normalizeNumber(input.lon ?? input.longitude);
-    if (lat === null || lon === null) {
+    if (!hasValidCoordinates(lat, lon)) {
       return "";
     }
     const kind = String(input.kind || input.type || "location").toLowerCase();
@@ -1011,7 +1034,7 @@
     }
     const lat = normalizeNumber(input.lat ?? input.latitude);
     const lon = normalizeNumber(input.lon ?? input.longitude);
-    if (lat === null || lon === null) {
+    if (!hasValidCoordinates(lat, lon)) {
       return;
     }
     const kind = String(input.kind || input.type || "location").toLowerCase();
@@ -1135,17 +1158,28 @@
     if (payload.type === "snapshot") {
       const headset = state.headsets.get(endpoint) || {};
       headset.radioStatus = String(payload.radioStatus || "Radio status unavailable");
-      headset.supportsCommands = payload.source !== "mayhamburger";
+      headset.readOnly = window.TsvTelemetry.isReadOnly(payload);
+      headset.supportsCommands = payload.source !== "mayhamburger" && !headset.readOnly;
+      headset.supportsMarkers = headset.supportsCommands && payload.capabilities?.markers !== false;
       headset.assetLabel = String(payload.assetLabel || "");
       state.headsets.set(endpoint, headset);
+      if (meshMessaging) meshMessaging.updateEndpoint(endpoint, payload, { connected: headset.connected === true });
+      const testActive = payload.testLocationActive === true && Number(payload.testLocationExpiresUnix) > Date.now() / 1000 &&
+        (payload.nodes || []).some(node => node.source === "test-location");
+      const newTest = testActive && !state.testViewRestore;
+      if (newTest) {
+        state.testViewRestore = { center: map.getCenter(), zoom: map.getZoom(), didAutoCenter: state.didAutoCenter };
+      }
       const nodeIds = new Set();
       const markerIds = new Set();
       (payload.nodes || []).forEach((node) => {
+        if (node.source === "test-location" && !testActive) return;
         const id = nodeKeyFromInput(node, endpoint);
         if (id) {
           nodeIds.add(id);
         }
-        updateNode(node, endpoint);
+        updateNode(node.source === "test-location" ? { ...node,
+          label: "TEST LOCATION", testLocationExpiresUnix: payload.testLocationExpiresUnix } : node, endpoint);
       });
       (payload.markers || []).forEach((marker) => {
         const id = markerKeyFromInput(marker);
@@ -1155,10 +1189,13 @@
         updateMarker(marker, endpoint);
       });
       reconcileSnapshot(endpoint, nodeIds, markerIds);
-      (payload.messages || []).forEach((message) => {
-        addFeed(message.kind || "MSG", message.text || JSON.stringify(message));
-      });
-      if (!state.didAutoCenter && payload.center && payload.center.lat && payload.center.lon) {
+      restoreAfterTestLocation();
+      renderHeadsetList();
+      updateControlAvailability();
+      (payload.messages || []).forEach(message => receiveMessage(message, endpoint));
+      if ((newTest || !state.didAutoCenter) && payload.center &&
+          hasValidCoordinates(normalizeNumber(payload.center.lat), normalizeNumber(payload.center.lon)) &&
+          (!payload.testLocationActive || testActive)) {
         map.setView([payload.center.lat, payload.center.lon], payload.center.zoom || map.getZoom());
         state.didAutoCenter = true;
       } else {
@@ -1175,8 +1212,17 @@
       return;
     }
     if (payload.type === "message") {
-      addFeed(payload.kind || "MSG", payload.text || "Message received");
+      receiveMessage(payload, endpoint);
     }
+  }
+
+  function receiveMessage(message, endpoint) {
+    const key = JSON.stringify([endpoint, message.id || message.packetId || "", message.from || "",
+      message.receivedUnix || message.timestamp || "", message.kind || "MSG", message.text || ""]);
+    if (state.seenMessages.has(key)) return;
+    state.seenMessages.set(key, true);
+    while (state.seenMessages.size > 128) state.seenMessages.delete(state.seenMessages.keys().next().value);
+    addFeed(message.kind || "MSG", message.text || "Message received");
   }
 
   function buildCommand(kind, lat, lon, heading, label) {
@@ -1220,11 +1266,18 @@
         options.headers = { "content-type": "application/json" };
         options.body = JSON.stringify(payload);
         const response = await fetch(markerUrl, options);
-        if (response.ok && (await response.json()).ok === true) {
+        if (!response.ok) {
+          addFeed("SEND", `${endpointLabel(headset.endpoint)} rejected marker`);
+          return false;
+        }
+        const result = await response.json();
+        if (result.ok === true) {
           requestSnapshotSoon(headset.endpoint, 250);
           requestSnapshotSoon(headset.endpoint, 850);
           return true;
         }
+        addFeed("SEND", `${endpointLabel(headset.endpoint)} did not accept marker`);
+        return false;
       } catch (error) {
         addFeed("SEND", `${endpointLabel(headset.endpoint)} HTTP marker blocked`);
       }
@@ -1232,15 +1285,23 @@
 
     if (headset.socket &&
         headset.socket.readyState === WebSocket.OPEN) {
-      headset.socket.send(JSON.stringify(payload));
-      requestSnapshotSoon(headset.endpoint, 250);
-      requestSnapshotSoon(headset.endpoint, 850);
-      return true;
+      try {
+        headset.socket.send(JSON.stringify(payload));
+        requestSnapshotSoon(headset.endpoint, 250);
+        requestSnapshotSoon(headset.endpoint, 850);
+        return true;
+      } catch (error) {
+        addFeed("SEND", `${endpointLabel(headset.endpoint)} could not queue marker`);
+      }
     }
     return false;
   }
 
-  function sendMarker(kind, lat, lon, heading, label, options = {}) {
+  async function sendMarker(kind, lat, lon, heading, label, options = {}) {
+    if (!hasValidCoordinates(lat, lon)) {
+      if (!options.silent) addFeed("ERROR", "Marker latitude/longitude is invalid");
+      return { valid: false, attempted: 0, queued: 0 };
+    }
     const marker = { type: "marker", kind, label, lat, lon, heading };
     if (kind === "threat") {
       marker.coneDegrees = 3;
@@ -1250,21 +1311,27 @@
     }
     updateMarker(marker);
     const command = buildCommand(kind, lat, lon, heading, label);
-    const liveHeadsets = connectedHeadsets().filter(headset => headset.supportsCommands !== false);
+    const liveHeadsets = connectedHeadsets().filter(headset => headset.supportsCommands !== false && headset.supportsMarkers !== false);
     if (liveHeadsets.length > 0) {
       const payload = { type: "marker_command", command, marker };
-      Promise.all(liveHeadsets.map(headset => postMarkerToHeadset(headset, payload))).then(results => {
-        const sent = results.filter(Boolean).length;
-        if (!options.silent) addFeed("SEND", sent ? `Marker queued to ${sent} headset(s)` : "Marker kept locally; no headset accepted it");
-      });
+      const results = await Promise.allSettled(
+        liveHeadsets.map(headset => postMarkerToHeadset(headset, payload)));
+      const queued = results.filter(result => result.status === "fulfilled" && result.value === true).length;
+      if (!options.silent) addFeed("SEND", queued
+        ? `Marker queued to ${queued}/${liveHeadsets.length} headset(s)`
+        : "Marker kept locally; no headset accepted it");
+      return { valid: true, attempted: liveHeadsets.length, queued };
     } else if (!options.silent && navigator.clipboard) {
-      navigator.clipboard.writeText(command).catch(() => {});
-      if (!options.silent) {
+      try {
+        await navigator.clipboard.writeText(command);
         addFeed("COPY", `${command} copied; no headset connected`);
+      } catch (error) {
+        addFeed("COMMAND", `${command}; kept locally, clipboard unavailable`);
       }
     } else if (!options.silent) {
       addFeed("COMMAND", command);
     }
+    return { valid: true, attempted: 0, queued: 0 };
   }
 
   function updateMarkerToolUi() {
@@ -1407,23 +1474,31 @@
     updateMarkerToolUi();
   }
 
-  function finishRoute() {
+  async function finishRoute() {
     if (state.routeDraftPoints.length < 2) {
       addFeed("ROUTE", "Add at least two points before finishing");
       return;
     }
+    const points = state.routeDraftPoints.slice();
+    if (!points.every(point => hasValidCoordinates(point.lat, point.lng))) {
+      addFeed("ROUTE", "Route contains invalid coordinates; no points sent");
+      return;
+    }
     const label = state.routeLabel || `ROUTE ${state.routeNumber}`;
     const heading = normalizeNumber(els.markerHeading ? els.markerHeading.value : 0) || 0;
-    state.routeDraftPoints.forEach((point) => {
-      sendMarker("route", point.lat, point.lng, heading, label, { silent: true });
-    });
-    addFeed("ROUTE", `${label} sent with ${state.routeDraftPoints.length} points`);
     state.routeNumber += 1;
     state.placementKind = null;
     state.routeDrawing = false;
     state.routeDraftPoints = [];
     clearRoutePreview();
     updateMarkerToolUi();
+    const results = await Promise.all(points.map(point =>
+      sendMarker("route", point.lat, point.lng, heading, label, { silent: true })));
+    const attempted = results.reduce((total, result) => total + result.attempted, 0);
+    const queued = results.reduce((total, result) => total + result.queued, 0);
+    addFeed("ROUTE", attempted
+      ? `${label} kept locally (${points.length} points); ${queued}/${attempted} headset requests queued`
+      : `${label} kept locally (${points.length} points); no headset connected`);
   }
 
   function routePointFromPointer(event) {
@@ -1496,13 +1571,19 @@
       return;
     }
 
+    let socketQueued = 0;
     liveHeadsets.forEach((headset) => {
-      headset.socket.send(JSON.stringify({
-        type: "control",
-        control
-      }));
-      requestSnapshotSoon(headset.endpoint, 250);
-      requestSnapshotSoon(headset.endpoint, 850);
+      try {
+        headset.socket.send(JSON.stringify({
+          type: "control",
+          control
+        }));
+        socketQueued++;
+        requestSnapshotSoon(headset.endpoint, 250);
+        requestSnapshotSoon(headset.endpoint, 850);
+      } catch (error) {
+        addFeed("CONTROL", `${endpointLabel(headset.endpoint)} could not queue ${control}`);
+      }
     });
 
     let httpSent = 0;
@@ -1527,8 +1608,8 @@
 
     addFeed(
       "CONTROL",
-      `${control} sent to ${liveHeadsets.length + httpSent} headset(s)`);
-    if (liveHeadsets.length + httpSent > 0) {
+      `${control} requested on ${socketQueued + httpSent}/${liveHeadsets.length + snapshotHeadsets.length} headset(s)`);
+    if (socketQueued + httpSent > 0) {
       requestAllSnapshotsSoon(1200);
     }
   }
@@ -1542,7 +1623,9 @@
   }
 
   function updateReadouts() {
-    const node = state.latestNode;
+    const node = Array.from(state.nodes.values()).find(item => item.source === "test-location") || state.latestNode;
+    const synthetic = window.TsvTelemetry.isSyntheticPosition(node);
+    els.gpsReadout.classList.toggle("test-location", Boolean(synthetic));
     if (!node) {
       els.gridReadout.textContent = "NO POSITION";
       els.gpsReadout.textContent = "GPS WAIT";
@@ -1551,7 +1634,7 @@
       return;
     }
     els.gridReadout.textContent = `${node.lat.toFixed(5)}, ${node.lon.toFixed(5)}`;
-    els.gpsReadout.textContent = node.source === "browser" ? "GPS LIVE" :
+    els.gpsReadout.textContent = synthetic ? "TEST LOCATION" : node.source === "browser" ? "GPS LIVE" :
       window.TsvTelemetry.positionCurrent(node) ? "GPS CURRENT" :
       node.positionUpdatedAt == null ? "GPS AGE UNKNOWN" : "GPS LAST KNOWN";
     els.accuracyReadout.textContent =
@@ -1563,6 +1646,11 @@
 
   function pruneExpiredMarkers() {
     const now = Date.now();
+    Array.from(state.nodes.values()).forEach(node => {
+      if (node.source === "test-location" && node.testLocationExpiresUnix > 0 &&
+          now >= node.testLocationExpiresUnix * 1000) removeNode(node.id);
+    });
+    restoreAfterTestLocation();
     Array.from(state.markers.values()).forEach((marker) => {
       if (!marker.expiresAt || marker.expiresAt > now) {
         return;
@@ -1573,8 +1661,19 @@
     updateMetrics();
   }
 
+  function restoreAfterTestLocation() {
+    if (state.testViewRestore && !Array.from(state.nodes.values()).some(node => node.source === "test-location")) {
+      const restore = state.testViewRestore;
+      state.testViewRestore = null;
+      map.setView(restore.center, restore.zoom);
+      state.didAutoCenter = restore.didAutoCenter;
+      renderHeadsetList();
+      updateReadouts();
+    }
+  }
+
   function loadDemo() {
-    handleMessage({
+    const demo = {
       type: "snapshot",
       center: { lat: defaultCenter[0], lon: defaultCenter[1], zoom: defaultZoom },
       nodes: [
@@ -1592,8 +1691,11 @@
         { id: "route:a:2", kind: "route", label: "ROUTE ALPHA", lat: 34.298100, lon: -83.825900 },
         { id: "route:a:3", kind: "route", label: "ROUTE ALPHA", lat: 34.299140, lon: -83.824450 }
       ]
-    }, "demo");
-    addFeed("DEMO", "Loaded Gainesville Square telemetry snapshot");
+    };
+    demo.nodes.forEach(node => { node.label = `DEMO ${node.label}`; node.source = "demo"; });
+    demo.markers.forEach(marker => { marker.label = `DEMO ${marker.label}`; marker.source = "demo"; });
+    handleMessage(demo, "demo");
+    addFeed("DEMO", "Loaded synthetic local demonstration; no GPS fix or radio transmission");
   }
 
   document.querySelectorAll("[data-marker-kind]").forEach((button) => {
@@ -1637,7 +1739,7 @@
     const lat = normalizeNumber(els.markerLat.value);
     const lon = normalizeNumber(els.markerLon.value);
     const heading = normalizeNumber(els.markerHeading ? els.markerHeading.value : 0) || 0;
-    if (lat === null || lon === null) {
+    if (!hasValidCoordinates(lat, lon)) {
       addFeed("ERROR", "Marker latitude/longitude is invalid");
       return;
     }

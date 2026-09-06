@@ -3,6 +3,27 @@ const assert = require("node:assert/strict");
 const api = require("../../assets/telemetry-connection.js");
 
 const now = 2000000000000;
+assert.equal(api.normalizeEndpoint("headset.local"), "ws://headset.local:8787");
+assert.equal(api.normalizeEndpoint("http://192.0.2.1:8787"), "ws://192.0.2.1:8787");
+assert.equal(api.normalizeEndpoint("https://private.example.ts.net:9443/"), "wss://private.example.ts.net:9443");
+assert.equal(api.normalizeEndpoint("https://relay.example/"), "wss://relay.example");
+assert.equal(api.normalizeEndpoint("http://relay.example:80/"), "ws://relay.example");
+assert.equal(api.endpointKey("wss://relay.example"), api.endpointKey("wss://relay.example:443"));
+assert.notEqual(api.endpointKey("wss://relay.example"), api.endpointKey("wss://relay.example:8787"));
+for (const invalid of ["file:///tmp", "javascript:alert(1)", "https://user:secret@relay.example"])
+  assert.equal(api.normalizeEndpoint(invalid), "");
+const noGps = api.normalizeSnapshot({ type: "snapshot", source: "headset", localHandle: "S1", nodes: [],
+  radioStatus: "USB waiting", positionStatus: "GPS waiting", readOnly: true, capabilities: { messages: true } });
+assert.equal(noGps.assetLabel, "S1 · Quest headset");
+assert.equal(noGps.nodes.length, 0, "Headset identity must not synthesize position");
+assert.equal(api.isReadOnly(noGps), true);
+assert.equal(noGps.capabilities.messages, true, "Message capability remains independent of read-only controls");
+assert.match(api.summary(noGps), /^Read-only/);
+assert.equal(api.isReadOnly({ capabilities: { commands: false } }), true);
+assert.equal(api.isReadOnly({}), false, "Legacy direct headset control compatibility");
+assert.equal(api.positionCurrent({ source: "test-location", positionTimeUnix: now / 1000 }, now), false);
+assert.equal(api.positionCurrent({ source: "demo", positionTimeUnix: now / 1000 }, now), false);
+assert.match(api.summary({ testLocationActive: true, positionStatus: "GPS current" }), /TEST LOCATION/);
 for (const host of ["192.168.1.2", "100.64.0.1", "100.127.255.254", "phone.example.ts.net", "fd7a:115c:a1e0::1"])
   assert.equal(api.addressSpace(host), "local", host);
 for (const host of ["100.63.1.1", "100.128.0.1", "8.8.8.8", "192.168.999.2"])

@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>TalleySoft Vision IoT Ops</title>
   <meta name="description" content="TalleySoft Vision asset map, ATAK markers, targets, routes, and tactical alerts.">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="assets/talleysoft-site.css?v=20260905-recovery">
+  <link rel="stylesheet" href="assets/vendor/leaflet-1.9.4/leaflet.css">
+  <link rel="stylesheet" href="assets/talleysoft-site.css?v=20260906-live-operations">
 </head>
 <body>
   <header class="topbar">
@@ -19,6 +19,7 @@
     </a>
     <nav aria-label="Primary">
       <a href="features-controls.html">Features &amp; Controls</a>
+      <a href="#mesh-messaging">Messages</a>
       <a href="#atak">ATAK Tools</a>
       <a href="#markers">Markers</a>
     </nav>
@@ -78,7 +79,7 @@
         </div>
         <label class="field-label" for="headset-url">Asset endpoint</label>
         <div class="connect-row">
-          <input id="headset-url" value="" placeholder="http://ASSET-IP:8088" spellcheck="false">
+          <input id="headset-url" value="" placeholder="ws://HEADSET-IP:8787" spellcheck="false">
           <button type="button" id="add-headset">Add</button>
         </div>
         <div class="button-row headset-actions">
@@ -102,12 +103,39 @@
         <ul class="headset-list" id="headset-list">
           <li>No asset endpoints saved.</li>
         </ul>
+        <p class="fine-print" id="connection-help" role="status" hidden></p>
         <p class="fine-print">
-          Mayhamburger Asset: <code>http://ASSET-IP:8088</code>.
+          Quest headset: <code>ws://HEADSET-IP:8787</code>.
+          Mayhamburger camera: <code>http://PHONE-IP:8088</code>.
           <br>
-          Add an Asset on the same LAN or through Tailscale. Relay status is read from <code>/snapshot</code> or <code>/status</code>, including when GPS is waiting.
-          If GitHub Pages cannot open a local endpoint, open the Asset URL directly.
+          Add a LAN address or your private HTTPS relay. Addresses are saved only in this browser; headsets appear in Assets while GPS is waiting.
+          Allow local network access if prompted. If this page cannot connect, open the asset address directly to check access.
         </p>
+      </section>
+
+      <section class="panel" id="mesh-messaging" aria-labelledby="mesh-messaging-title">
+        <div class="panel-title">
+          <h2 id="mesh-messaging-title">Mesh Messages</h2>
+        </div>
+        <form class="message-form">
+          <label class="field-label" for="message-asset">Through headset</label>
+          <select id="message-asset" data-message-asset>
+            <option value="">Choose a headset</option>
+          </select>
+          <label class="field-label" for="message-channel">Radio channel</label>
+          <select id="message-channel" data-message-channel disabled>
+            <option value="">Choose a channel</option>
+          </select>
+          <p class="fine-print message-privacy" data-message-privacy></p>
+          <label class="field-label" for="message-text">Message</label>
+          <textarea id="message-text" data-message-text rows="3" maxlength="180"
+            placeholder="Write a team message" aria-describedby="message-count message-status"></textarea>
+          <span class="message-count" id="message-count" data-message-count>0/180</span>
+          <button type="submit" data-message-send disabled>Send Message</button>
+          <button type="button" data-message-new hidden>New message</button>
+          <p class="fine-print message-status" id="message-status" data-message-status
+            role="status" aria-live="polite">Choose a connected headset to send a message.</p>
+        </form>
       </section>
 
       <section class="panel" id="atak">
@@ -214,7 +242,7 @@
     </section>
   </main>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="assets/vendor/leaflet-1.9.4/leaflet.js"></script>
   <script>
     (function () {
       if (!window.L || !window.L.map || window.tsvMapHooked) {
@@ -229,8 +257,9 @@
       };
     })();
   </script>
-  <script src="assets/telemetry-connection.js?v=20260905-recovery"></script>
-  <script src="assets/talleysoft-site.js?v=20260905-recovery"></script>
+  <script src="assets/telemetry-connection.js?v=20260906-live-operations"></script>
+  <script src="assets/mesh-messaging.js?v=20260906-live-operations"></script>
+  <script src="assets/talleysoft-site.js?v=20260906-live-operations"></script>
 </body>
 </html>
 

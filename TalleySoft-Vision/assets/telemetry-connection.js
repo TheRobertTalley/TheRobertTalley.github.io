@@ -6,6 +6,41 @@
   "use strict";
   const POSITION_CURRENT_MS = 90000;
 
+  function normalizeEndpoint(value) {
+    let endpoint = String(value || "").trim().replace(/\/$/, "");
+    if (!endpoint) return "";
+    const explicitScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(endpoint);
+    if (/^https?:\/\//i.test(endpoint)) endpoint = endpoint.replace(/^http/i, "ws");
+    else if (explicitScheme && !/^wss?:\/\//i.test(endpoint)) return "";
+    else if (!explicitScheme) endpoint = `ws://${endpoint}`;
+    try {
+      const url = new URL(endpoint);
+      if (!/^wss?:$/.test(url.protocol) || !url.hostname || url.username || url.password) return "";
+      // Bare headset addresses retain :8787. Explicit HTTP(S)/WS(S) URLs use
+      // their standard or supplied port, including HTTPS relays on 443/9443.
+      if (!explicitScheme && !url.port) url.port = "8787";
+      url.pathname = "/"; url.search = ""; url.hash = "";
+      return url.toString().replace(/\/$/, "");
+    } catch (_) { return ""; }
+  }
+
+  function endpointKey(endpoint) {
+    try {
+      const url = new URL(endpoint);
+      const host = url.hostname.toLowerCase() === "localhost" ? "127.0.0.1" : url.hostname.toLowerCase();
+      return `${url.protocol}//${host}:${url.port || (url.protocol === "wss:" ? "443" : "80")}`;
+    } catch (_) { return endpoint; }
+  }
+
+  function isSyntheticPosition(node) {
+    return node && (node.source === "test-location" || node.source === "demo");
+  }
+
+  function isReadOnly(payload) {
+    return payload.readOnly === true || payload.capabilities?.readOnly === true ||
+      payload.capabilities?.commands === false;
+  }
+
   function addressSpace(host) {
     host = String(host).toLowerCase().replace(/^\[|\]$/g, "");
     if (host === "localhost" || host === "::1") return "loopback";
@@ -30,6 +65,7 @@
   }
 
   function positionCurrent(node, now = Date.now()) {
+    if (isSyntheticPosition(node)) return false;
     const time = node.positionUpdatedAt == null ? positionTime(node, now) : node.positionUpdatedAt;
     return node.positionCurrent !== false && time != null && time <= now + 60000 &&
       now - time <= POSITION_CURRENT_MS;
@@ -37,7 +73,10 @@
 
   function normalizeSnapshot(payload, now = Date.now()) {
     if (!payload || typeof payload !== "object") throw new Error("Invalid telemetry");
-    if (payload.type === "snapshot" && Array.isArray(payload.nodes)) return payload;
+    if (payload.type === "snapshot" && Array.isArray(payload.nodes)) {
+      return { ...payload, assetLabel: payload.assetLabel ||
+        (payload.source === "headset" ? (payload.localHandle ? `${payload.localHandle} · Quest headset` : "Quest headset") : "") };
+    }
     // Older Mayhamburger relays expose camera and GPS status without /snapshot.
     if (payload.relayPort !== 8088 || !payload.hud ||
         !Number.isFinite(Number(payload.cameraFrameVersion))) throw new Error("Unsupported telemetry");
@@ -61,7 +100,8 @@
   }
 
   function summary(payload) {
-    return [payload.radioStatus, payload.cameraStatus, payload.positionStatus].filter(Boolean).join(" · ");
+    return [isReadOnly(payload) ? "Read-only" : "", payload.radioStatus, payload.cameraStatus,
+      payload.testLocationActive ? "TEST LOCATION" : payload.positionStatus].filter(Boolean).join(" · ");
   }
 
   function createManager(options) {
@@ -180,5 +220,6 @@
     }
     return { connect, disconnect, requestSoon };
   }
-  return { addressSpace, positionTime, positionCurrent, normalizeSnapshot, summary, createManager };
+  return { normalizeEndpoint, endpointKey, isSyntheticPosition, isReadOnly,
+    addressSpace, positionTime, positionCurrent, normalizeSnapshot, summary, createManager };
 });

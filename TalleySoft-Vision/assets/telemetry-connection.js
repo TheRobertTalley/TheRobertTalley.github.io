@@ -32,6 +32,29 @@
     } catch (_) { return endpoint; }
   }
 
+  function endpointsFromQuery(search) {
+    if (typeof search !== "string" || search.length > 12288) return [];
+    const endpoints = [], seen = new Set();
+    let inspected = 0;
+    for (const pair of search.replace(/^\?/, "").split("&")) {
+      const separator = pair.indexOf("=");
+      const rawKey = separator < 0 ? pair : pair.slice(0, separator);
+      let key;
+      try { key = decodeURIComponent(rawKey.replace(/\+/g, " ")); } catch (_) { continue; }
+      if (key !== "asset") continue;
+      if (++inspected > 4) break;
+      let value;
+      try { value = decodeURIComponent((separator < 0 ? "" : pair.slice(separator + 1)).replace(/\+/g, " ")); }
+      catch (_) { continue; }
+      if (!value || value.length > 2048) continue;
+      const endpoint = normalizeEndpoint(value);
+      if (!endpoint || seen.has(endpointKey(endpoint))) continue;
+      seen.add(endpointKey(endpoint));
+      endpoints.push(endpoint);
+    }
+    return endpoints;
+  }
+
   function isSyntheticPosition(node) {
     return node && (node.source === "test-location" || node.source === "demo");
   }
@@ -220,6 +243,6 @@
     }
     return { connect, disconnect, requestSoon };
   }
-  return { normalizeEndpoint, endpointKey, isSyntheticPosition, isReadOnly,
+  return { normalizeEndpoint, endpointKey, endpointsFromQuery, isSyntheticPosition, isReadOnly,
     addressSpace, positionTime, positionCurrent, normalizeSnapshot, summary, createManager };
 });

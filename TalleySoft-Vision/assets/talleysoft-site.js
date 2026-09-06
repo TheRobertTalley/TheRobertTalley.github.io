@@ -1781,7 +1781,8 @@
 
   state.endpoints = uniqueEndpoints([
     ...loadEndpoints(),
-    ...discoverDefaultEndpoints()
+    ...discoverDefaultEndpoints(),
+    ...window.TsvTelemetry.endpointsFromQuery(window.location && window.location.search)
   ]).filter((endpoint) => !isCurrentPageEndpoint(endpoint));
   saveEndpoints();
   renderHeadsetList();

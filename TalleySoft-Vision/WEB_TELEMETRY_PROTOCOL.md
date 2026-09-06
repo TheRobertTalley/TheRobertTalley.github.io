@@ -21,6 +21,21 @@ explicit HTTP(S)/WS(S) addresses retain their standard or supplied port. A
 private HTTPS relay may therefore use 443 or 9443. Public Pages is a static
 client and cannot discover arbitrary headsets or accept headset push messages.
 
+## Shareable connection links
+
+Append `?asset=` and a URL-encoded endpoint to the Operations page URL. For example,
+`?asset=https%3A%2F%2Frelay.example%3A9443` connects to that HTTPS relay on startup.
+Repeat `asset` to include multiple endpoints. Only the first four values are
+inspected, each decoded address is limited to 2,048 characters, and the complete
+query is limited to 12,288 characters. Malformed values, unsupported schemes,
+and addresses containing a username or password are ignored. Do not include
+passwords, tokens, or other secrets in a shareable URL.
+
+Linked endpoints are combined with saved and automatically discovered addresses,
+using the same normalization, duplicate removal, current-page filter, and browser
+storage as Add. They connect through the existing authenticated transport;
+opening a link does not grant access or send messages, controls, or markers.
+
 For bench testing from this computer, forward the headset port over wireless
 ADB:
 

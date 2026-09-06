@@ -564,3 +564,9 @@ li + li {
   }
 }
 
+
+/* Keep full connection and radio details readable in the existing asset list. */
+.headset-list li { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.headset-list li > span { grid-column: 1 / -1; white-space: normal; overflow-wrap: anywhere; }
+.headset-list li > button { min-height: 2.75rem; }
+.headset-list li > b { grid-column: 1 / -1; grid-row: 2; white-space: normal; overflow-wrap: anywhere; font-size: .78rem; }

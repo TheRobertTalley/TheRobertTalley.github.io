@@ -9,8 +9,8 @@
     return;
   }
 
-  const defaultCenter = [34.2981382, -83.8257640];
-  const defaultZoom = 17;
+  const defaultCenter = [20, 0];
+  const defaultZoom = 2;
   const map = L.map(mapElement, {
     zoomControl: true,
     preferCanvas: true
@@ -28,11 +28,7 @@
     directions: new Map()
   };
 
-  const defaultTelemetryEndpoints = [
-    "ws://127.0.0.1:8787",
-    "ws://localhost:8787",
-    "ws://192.168.1.61:8787"
-  ];
+  const defaultTelemetryEndpoints = [];
 
   const state = {
     selectedKind: "target",
@@ -55,6 +51,17 @@
     pollers: new Map(),
     endpointSnapshots: new Map()
   };
+
+  const telemetryManager = window.TsvTelemetry.createManager({
+    onState(endpoint, status, live, socket) {
+      const headset = state.headsets.get(endpoint) || {};
+      headset.socket = socket;
+      state.headsets.set(endpoint, headset);
+      setHeadsetStatus(endpoint, status, live);
+      updateReadouts();
+    },
+    onSnapshot: handleMessage
+  });
 
   const els = {
     headsetUrl: document.getElementById("headset-url"),
@@ -375,11 +382,18 @@
     endpoint = endpoint.replace(/\/$/, "");
     if (/^https?:\/\//i.test(endpoint)) {
       endpoint = endpoint.replace(/^http/i, "ws");
+    } else if (/^[a-z][a-z0-9+.-]*:\/\//i.test(endpoint) &&
+        !/^wss?:\/\//i.test(endpoint)) {
+      return "";
     } else if (!/^wss?:\/\//i.test(endpoint)) {
       endpoint = `ws://${endpoint}`;
     }
     try {
       const url = new URL(endpoint);
+      if (!/^wss?:$/.test(url.protocol) || !url.hostname ||
+          url.username || url.password) {
+        return "";
+      }
       if (!url.port) {
         url.port = "8787";
       }
@@ -541,6 +555,8 @@
       label.textContent = node ? node.label : endpointLabel(endpoint);
       label.title = node ? `${node.label} - ${endpointLabel(endpoint)}` : endpointLabel(endpoint);
       status.textContent = headset.status || "Saved";
+      if (headset.assetLabel && !Array.from(state.nodes.values()).some(n => n.endpoint === endpoint && n.isLocal))
+        label.textContent = headset.assetLabel;
       status.className = headset.connected ? "good-text" : "warn-text";
       item.addEventListener("click", () => {
         if (!node) {
@@ -595,6 +611,7 @@
     }
     els.headsetUrl.value = "";
     renderHeadsetList();
+    connectHeadset(endpoint);
   }
 
   function removeHeadset(endpoint) {
@@ -611,55 +628,10 @@
 
   function connectHeadset(endpoint) {
     const normalized = normalizeEndpoint(endpoint);
-    if (!normalized) {
-      addFeed("ASSET", "Invalid Asset endpoint");
-      return;
-    }
-    if (!state.endpoints.includes(normalized)) {
-      state.endpoints.push(normalized);
-      saveEndpoints();
-    }
-    disconnectHeadset(normalized, true);
-    try {
-      const socket = new WebSocket(normalized);
-      state.headsets.set(normalized, {
-        endpoint: normalized,
-        socket,
-        status: "Opening",
-        connected: false,
-        lastSeen: 0
-      });
-      renderHeadsetList();
-      updateConnectionState();
-      socket.addEventListener("open", () => {
-        setHeadsetStatus(normalized, "Live", true);
-        stopSnapshotPolling(normalized);
-        addFeed("ASSET", `Connected ${endpointLabel(normalized)}`);
-        socket.send(JSON.stringify({ type: "hello", client: "talleysoft-vision-web" }));
-      });
-      socket.addEventListener("message", (event) => {
-        try {
-          handleMessage(JSON.parse(event.data), normalized);
-          setHeadsetStatus(normalized, "Live", true);
-        } catch (error) {
-          addFeed("ASSET", `Ignored malformed data from ${endpointLabel(normalized)}`);
-        }
-      });
-      socket.addEventListener("close", () => {
-        setHeadsetStatus(normalized, "Closed", false);
-        startSnapshotPolling(normalized);
-        addFeed("ASSET", `Closed ${endpointLabel(normalized)}`);
-      });
-      socket.addEventListener("error", () => {
-        setHeadsetStatus(normalized, "Error", false);
-        startSnapshotPolling(normalized);
-        addFeed("ASSET", `Error ${endpointLabel(normalized)}; try the Asset URL directly`);
-      });
-    } catch (error) {
-      setHeadsetStatus(normalized, "Error", false);
-      startSnapshotPolling(normalized);
-      addFeed("ASSET", error.message);
-    }
+    if (!normalized) { addFeed("CONNECT", "Enter a valid asset address"); return; }
+    if (!state.endpoints.includes(normalized)) { state.endpoints.push(normalized); saveEndpoints(); }
+    if (state.desiredEndpoints) state.desiredEndpoints.add(normalized);
+    telemetryManager.connect(normalized);
   }
 
   function snapshotUrlForEndpoint(endpoint) {
@@ -700,17 +672,12 @@
     }
   }
 
-  function targetAddressSpaceForHost(host) {
-    if (host === "localhost" ||
-        host === "::1" ||
-        host.startsWith("127.")) {
-      return "loopback";
-    }
-    return isPrivateNetworkHost(host) ? "local" : "";
-  }
+  function targetAddressSpaceForHost(host) { return window.TsvTelemetry.addressSpace(host); }
 
   function localFetchOptions(url) {
     const options = { cache: "no-store" };
+    if (typeof AbortSignal !== "undefined" && typeof AbortSignal.timeout === "function")
+      options.signal = AbortSignal.timeout(4000);
     try {
       const target = new URL(url);
       const addressSpace = targetAddressSpaceForHost(
@@ -736,81 +703,9 @@
       (a === 192 && b === 168);
   }
 
-  function startSnapshotPolling(endpoint) {
-    if (state.pollers.has(endpoint)) {
-      return;
-    }
-    const snapshotUrl = snapshotUrlForEndpoint(endpoint);
-    if (!snapshotUrl || !canAttemptHttpSnapshot(snapshotUrl)) {
-      return;
-    }
-
-    const poller = {
-      timer: null,
-      inFlight: false,
-      poll: null
-    };
-
-    const poll = async () => {
-      if (poller.inFlight) {
-        return;
-      }
-      poller.inFlight = true;
-      try {
-        const response = await fetch(
-          snapshotUrl,
-          localFetchOptions(snapshotUrl));
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-        handleMessage(await response.json(), endpoint);
-        setHeadsetStatus(endpoint, "Live snapshot", true);
-      } catch (error) {
-        setHeadsetStatus(endpoint, "No snapshot", false);
-      } finally {
-        poller.inFlight = false;
-      }
-    };
-
-    poller.poll = poll;
-    poller.timer = window.setInterval(poll, 1000);
-    state.pollers.set(endpoint, poller);
-    poll();
-  }
-
-  function stopSnapshotPolling(endpoint) {
-    const poller = state.pollers.get(endpoint);
-    if (!poller) {
-      return;
-    }
-    window.clearInterval(poller.timer);
-    state.pollers.delete(endpoint);
-  }
-
-  function requestSnapshotSoon(endpoint, delay = 160) {
-    const poller = state.pollers.get(endpoint);
-    if (poller && typeof poller.poll === "function") {
-      window.setTimeout(poller.poll, delay);
-      return;
-    }
-    const snapshotUrl = snapshotUrlForEndpoint(endpoint);
-    if (!snapshotUrl || !canAttemptHttpSnapshot(snapshotUrl)) {
-      return;
-    }
-    window.setTimeout(async () => {
-      try {
-        const response = await fetch(
-          snapshotUrl,
-          localFetchOptions(snapshotUrl));
-        if (response.ok) {
-          handleMessage(await response.json(), endpoint);
-          setHeadsetStatus(endpoint, "Live snapshot", true);
-        }
-      } catch (error) {
-        setHeadsetStatus(endpoint, "No snapshot", false);
-      }
-    }, delay);
-  }
+  function startSnapshotPolling(endpoint) { telemetryManager.requestSoon(endpoint, 0); }
+  function stopSnapshotPolling(endpoint) { /* Owned by the connection manager. */ }
+  function requestSnapshotSoon(endpoint, delay = 160) { telemetryManager.requestSoon(endpoint, delay); }
 
   function requestAllSnapshotsSoon(delay = 160) {
     state.endpoints.forEach((endpoint) => {
@@ -819,20 +714,9 @@
   }
 
   function disconnectHeadset(endpoint, quiet) {
-    const headset = state.headsets.get(endpoint);
-    if (headset && headset.socket) {
-      headset.socket.close();
-    }
-    stopSnapshotPolling(endpoint);
-    if (headset) {
-      headset.socket = null;
-      headset.connected = false;
-      headset.status = "Closed";
-      state.headsets.set(endpoint, headset);
-    }
-    if (!quiet) {
-      addFeed("ASSET", `Disconnected ${endpointLabel(endpoint)}`);
-    }
+    if (state.desiredEndpoints) state.desiredEndpoints.delete(endpoint);
+    telemetryManager.disconnect(endpoint);
+    if (!quiet) addFeed("CONNECT", `Disconnected ${endpointLabel(endpoint)}`);
     renderHeadsetList();
     updateConnectionState();
   }
@@ -985,6 +869,8 @@
       source: input.source || "meshtastic",
       endpoint: endpoint || "local",
       updatedAt: now,
+      positionUpdatedAt: window.TsvTelemetry.positionTime(input, now),
+      positionCurrent: input.positionCurrent !== false,
       isLocal: Boolean(input.isLocal)
     };
     const existing = state.nodes.get(id);
@@ -1017,7 +903,7 @@
   function nodePopup(node) {
     const heading = node.heading === null ? "--" : `${Math.round(node.heading)} deg`;
     const accuracy = node.accuracyYards === null ? "--" : `${Math.round(node.accuracyYards)} yd`;
-    return `<strong>${escapeHtml(node.label)}</strong><br>Heading ${heading}<br>Accuracy ${accuracy}<br>${escapeHtml(node.source)}<br>${escapeHtml(endpointLabel(node.endpoint))}`;
+    return `<strong>${escapeHtml(node.label)}</strong><br>Heading ${heading}<br>Accuracy ${accuracy}<br>${escapeHtml(node.source)}<br>${window.TsvTelemetry.positionCurrent(node) ? "Current position" : "Last known position; age may be unknown"}<br>${escapeHtml(endpointLabel(node.endpoint))}`;
   }
 
   function nodeKeyFromInput(input, endpoint) {
@@ -1247,6 +1133,11 @@
       return;
     }
     if (payload.type === "snapshot") {
+      const headset = state.headsets.get(endpoint) || {};
+      headset.radioStatus = String(payload.radioStatus || "Radio status unavailable");
+      headset.supportsCommands = payload.source !== "mayhamburger";
+      headset.assetLabel = String(payload.assetLabel || "");
+      state.headsets.set(endpoint, headset);
       const nodeIds = new Set();
       const markerIds = new Set();
       (payload.nodes || []).forEach((node) => {
@@ -1307,6 +1198,48 @@
     return `!${kind} ${sendLat} ${sendLon} ${safeLabel}`;
   }
 
+  function markerUrlForEndpoint(endpoint) {
+    try {
+      const url = new URL(endpoint);
+      url.protocol = url.protocol === "wss:" ? "https:" : "http:";
+      url.pathname = "/marker";
+      url.search = "";
+      url.hash = "";
+      return url.toString();
+    } catch (error) {
+      return "";
+    }
+  }
+
+  async function postMarkerToHeadset(headset, payload) {
+    const markerUrl = markerUrlForEndpoint(headset.endpoint);
+    if (markerUrl && canAttemptHttpSnapshot(markerUrl)) {
+      try {
+        const options = localFetchOptions(markerUrl);
+        options.method = "POST";
+        options.headers = { "content-type": "application/json" };
+        options.body = JSON.stringify(payload);
+        const response = await fetch(markerUrl, options);
+        if (response.ok && (await response.json()).ok === true) {
+          requestSnapshotSoon(headset.endpoint, 250);
+          requestSnapshotSoon(headset.endpoint, 850);
+          return true;
+        }
+      } catch (error) {
+        addFeed("SEND", `${endpointLabel(headset.endpoint)} HTTP marker blocked`);
+      }
+    }
+
+    if (headset.socket &&
+        headset.socket.readyState === WebSocket.OPEN) {
+      headset.socket.send(JSON.stringify(payload));
+      requestSnapshotSoon(headset.endpoint, 250);
+      requestSnapshotSoon(headset.endpoint, 850);
+      return true;
+    }
+    return false;
+  }
+
   function sendMarker(kind, lat, lon, heading, label, options = {}) {
     const marker = { type: "marker", kind, label, lat, lon, heading };
     if (kind === "threat") {
@@ -1317,20 +1250,13 @@
     }
     updateMarker(marker);
     const command = buildCommand(kind, lat, lon, heading, label);
-    const liveHeadsets = connectedHeadsets();
+    const liveHeadsets = connectedHeadsets().filter(headset => headset.supportsCommands !== false);
     if (liveHeadsets.length > 0) {
-      liveHeadsets.forEach((headset) => {
-        headset.socket.send(JSON.stringify({
-          type: "marker_command",
-          command,
-          marker
-        }));
-        requestSnapshotSoon(headset.endpoint, 250);
-        requestSnapshotSoon(headset.endpoint, 850);
+      const payload = { type: "marker_command", command, marker };
+      Promise.all(liveHeadsets.map(headset => postMarkerToHeadset(headset, payload))).then(results => {
+        const sent = results.filter(Boolean).length;
+        if (!options.silent) addFeed("SEND", sent ? `Marker queued to ${sent} headset(s)` : "Marker kept locally; no headset accepted it");
       });
-      if (!options.silent) {
-        addFeed("SEND", `${command} sent to ${liveHeadsets.length} headset(s)`);
-      }
     } else if (!options.silent && navigator.clipboard) {
       navigator.clipboard.writeText(command).catch(() => {});
       if (!options.silent) {
@@ -1557,11 +1483,11 @@
     if (!control) {
       return;
     }
-    const liveHeadsets = connectedHeadsets()
+    const liveHeadsets = connectedHeadsets().filter(headset => headset.supportsCommands !== false)
       .filter((headset) =>
         headset.socket && headset.socket.readyState === WebSocket.OPEN);
     const snapshotHeadsets = Array.from(state.headsets.entries())
-      .filter(([, headset]) => headset.connected)
+      .filter(([, headset]) => headset.connected && headset.supportsCommands !== false)
       .filter(([, headset]) =>
         !headset.socket || headset.socket.readyState !== WebSocket.OPEN);
 
@@ -1589,7 +1515,7 @@
         const response = await fetch(
           controlUrl,
           localFetchOptions(controlUrl));
-        if (response.ok) {
+        if (response.ok && (await response.json()).ok === true) {
           httpSent++;
           requestSnapshotSoon(endpoint, 250);
           requestSnapshotSoon(endpoint, 850);
@@ -1618,14 +1544,16 @@
   function updateReadouts() {
     const node = state.latestNode;
     if (!node) {
-      els.gridReadout.textContent = `${defaultCenter[0].toFixed(5)}, ${defaultCenter[1].toFixed(5)}`;
+      els.gridReadout.textContent = "NO POSITION";
       els.gpsReadout.textContent = "GPS WAIT";
       els.accuracyReadout.textContent = "ACC --";
-      els.meshReadout.textContent = "NO HEADSET";
+      els.meshReadout.textContent = connectedHeadsets().length ? "ASSET CONNECTED / GPS WAITING" : "NO HEADSET";
       return;
     }
     els.gridReadout.textContent = `${node.lat.toFixed(5)}, ${node.lon.toFixed(5)}`;
-    els.gpsReadout.textContent = node.source === "browser" ? "GPS LIVE" : "GPS OK";
+    els.gpsReadout.textContent = node.source === "browser" ? "GPS LIVE" :
+      window.TsvTelemetry.positionCurrent(node) ? "GPS CURRENT" :
+      node.positionUpdatedAt == null ? "GPS AGE UNKNOWN" : "GPS LAST KNOWN";
     els.accuracyReadout.textContent =
       node.accuracyYards === null ? "ACC --" : `ACC ${Math.round(node.accuracyYards)} yd`;
     els.meshReadout.textContent = node.source === "browser"
@@ -1760,5 +1688,5 @@
   updateMarkerToolUi();
   addFeed("READY", "Connecting to Asset telemetry endpoints");
   state.endpoints.forEach(connectHeadset);
-  window.setInterval(pruneExpiredMarkers, 1000);
+  window.setInterval(() => { pruneExpiredMarkers(); updateReadouts(); }, 1000);
 })();

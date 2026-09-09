@@ -3,53 +3,54 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#151c19">
-  <meta name="description" content="Robert Talley's Quest 3 project: thermal and night vision, FPV video, and a team map controlled with tracked hands.">
+  <meta name="theme-color" content="#07100d">
+  <meta name="description" content="FPV feeds, thermal, night vision, Meshtastic messages and an ATAK team map HUD on Quest 3, with surroundings still visible and hands free.">
   <link rel="canonical" href="https://theroberttalley.github.io/tsv/">
-  <meta property="og:title" content="TalleySoft Vision">
-  <meta property="og:description" content="Thermal, night vision, FPV video and a team map on Quest 3. Built by Robert Talley.">
+  <meta property="og:title" content="TSV | Robert Talley">
+  <meta property="og:description" content="FPV feeds, thermal, night vision, Meshtastic messages and an ATAK team map HUD on Quest 3, with surroundings still visible and hands free.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://theroberttalley.github.io/tsv/">
-  <title>TalleySoft Vision | Robert Talley</title>
-  <link rel="icon" type="image/svg+xml" href="./mark.svg">
-  <link rel="stylesheet" href="./style.css">
+  <title>TSV | Robert Talley</title>
+  <link rel="icon" type="image/svg+xml" href="./mark.svg?v=20260909-tsv">
+  <link rel="stylesheet" href="../TalleySoft-Vision/assets/talleysoft-site.css?v=20260906-live-operations">
+  <link rel="stylesheet" href="./style.css?v=20260909-operator-copy">
 </head>
-<body>
+<body class="tsv-overview">
   <a class="skip" href="#main">Skip to content</a>
-  <header class="site-header wrap">
-    <a class="brand" href="./" aria-label="TalleySoft Vision home"><img src="./mark.svg" width="34" height="34" alt=""><span>TalleySoft Vision</span></a>
+  <header class="topbar">
+    <a class="brand" href="./" aria-label="TSV home"><span class="brand-mark" aria-hidden="true">TSV</span><strong>TalleySoft Vision</strong></a>
     <nav aria-label="Main navigation"><a href="../TalleySoft-Vision/">Operations map</a><a href="../">All projects</a></nav>
   </header>
   <main id="main" class="wrap">
     <section class="intro" aria-labelledby="title">
       <p class="byline">Robert Talley / Meta Quest 3</p>
-      <h1 id="title">TalleySoft Vision</h1>
-      <p class="lead">I wanted thermal, night vision, drone video and a team map in the headset, with my surroundings still visible and my hands free.</p>
-      <p class="intro-note">TSV adds those views to Quest 3 passthrough. I use external cameras, a powered USB hub and tracked hand controls.</p>
+      <h1 id="title">TSV</h1>
+      <p class="lead">FPV feeds, thermal, night vision, Meshtastic messages, ATAK team map HUD, with surroundings still visible and hands free.</p>
+      <p class="intro-note">TSV adds those views to Quest 3 passthrough. Using external cameras and tracked hand controls for controllerless use.</p>
     </section>
 
-    <section class="features section" id="capabilities" aria-labelledby="features-title">
+    <section class="panel features" id="capabilities" aria-labelledby="features-title">
       <h2 id="features-title">What it does</h2>
       <dl class="feature-list">
-        <div><dt>Thermal &amp; night vision</dt><dd>Overlay either camera, or both, on the forward view. Each camera has its own alignment and image settings. Night vision can switch on automatically when it gets dark.</dd></div>
-        <div><dt>FPV &amp; camera views</dt><dd>Watch drone video through Sphere Link or the supported WFB receiver. Move FPV between a large view, center, mirror, small HUD and hidden. The weapon-camera viewport stays separate from observation cameras. The rear view can show a selected camera.</dd></div>
-        <div><dt>Map &amp; Meshtastic</dt><dd>See GPS position, team nodes, messages, markers and routes. The browser operations map connects to headsets for map work and messaging through a configured radio.</dd></div>
-        <div><dt>Hand controls</dt><dd>Hold a pinch and rotate your wrist to change a view. Triple-tap the opposite wrist to open Settings. Adjust cameras and save the setup without controllers.</dd></div>
+        <div><dt>FPV &amp; camera views</dt><dd>Watch drone video through Sphere Link or the supported analog receivers. Move FPV between a large view, center, mirror, small HUD.</dd></div>
+        <div><dt>Weapon-mounted cameras</dt><dd>The weapon camera lets you see around corners or above trenches. Leave it behind to monitor, hands free in real time.</dd></div>
+        <div><dt>Thermal &amp; night vision</dt><dd>See in the dark, see in IR, see in real time, all in one place.</dd></div>
+        <div><dt>Map &amp; Meshtastic</dt><dd>Your GPS position, team nodes, messages, markers and routes. Browser operations map can connect headsets for map work and messaging through a configured radio. Or standard ATAK or Meshtastic radios for off-grid use.</dd></div>
+        <div><dt>Hand controls</dt><dd>Controls use the non-dominant or non-weapon hand only. Hold a pinch and rotate your wrist to change a view. Triple-tap the opposite wrist to open Settings. Adjust cameras and save the setup without controllers.</dd></div>
       </dl>
     </section>
 
-    <section class="section progress" aria-labelledby="progress-title">
+    <section class="panel progress" aria-labelledby="progress-title">
       <h2 id="progress-title">Still being worked on</h2>
-      <div><p>FPV, thermal and night vision have run on the headset. The complete setup is still in testing. Camera alignment during head movement, USB reconnects and FPV reliability need more work.</p>
-      <p>Radar and visual detection remain experimental. Optical zoom, split-screen thermal/night vision and camera-view head tracking are not ready.</p></div>
+      <p>Person-detecting radar and visual detection remain experimental but usable.</p>
     </section>
 
-    <section class="section links" id="guide" aria-labelledby="links-title">
-      <h2 id="links-title">Use TSV</h2>
-      <div><p>You’ll need a Quest 3, the TSV app and supported hardware for the views you want to use. Local cameras and hand controls run on the headset; team and remote features need their respective connections.</p>
-      <div class="actions"><a class="button" href="../TalleySoft-Vision/">Open operations map <span aria-hidden="true">↗</span></a><a href="../TalleySoft-Vision/features-controls.html">Controls reference</a><a href="https://github.com/TheRobertTalley/TalleySoft-Vision">Source &amp; build notes</a></div></div>
+    <section class="panel use" id="guide" aria-labelledby="use-title">
+      <h2 id="use-title">To use TSV</h2>
+      <p>You’ll need a Quest 3, the TSV app and supported hardware for the views you want to use. Local cameras and hand controls run on the headset; team and remote features need their respective connections.</p>
+      <div class="actions"><a class="button" href="../TalleySoft-Vision/">Open operations map <span aria-hidden="true">↗</span></a><a href="../TalleySoft-Vision/features-controls.html">Controls reference</a><a href="https://github.com/TheRobertTalley/TalleySoft-Vision">Source &amp; build notes</a></div>
     </section>
   </main>
-  <footer class="wrap"><span>Built by Robert Talley.</span><a href="#main">Back to top ↑</a></footer>
+  <footer class="wrap"><span>Robert Talley</span><a href="#main">Back to top ↑</a></footer>
 </body>
 </html>

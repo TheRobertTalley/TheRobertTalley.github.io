@@ -2,7 +2,7 @@
 
 This repository hosts public GitHub Pages projects for `theroberttalley.github.io`.
 
-- TalleySoft Vision features and field guide: https://theroberttalley.github.io/tsv/
+- TalleySoft Vision: https://theroberttalley.github.io/tsv/
 - BlackBox Airspace Radar: https://theroberttalley.github.io/blackbox-airspace-radar/
 
 The smart calendar display is a static webpage built for a TV or Fire Stick browser:

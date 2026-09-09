@@ -64,6 +64,7 @@ nav {
   width: 3.35rem;
   height: 3.35rem;
   object-fit: contain;
+  border-radius: 0.35rem;
 }
 
 .wordmark strong,
@@ -247,7 +248,7 @@ h1 {
   display: block;
   width: min(72%, 23rem);
   height: auto;
-  filter: sepia(0.08) contrast(1.08);
+  mix-blend-mode: lighten;
 }
 
 .plate-label,
@@ -536,6 +537,7 @@ footer {
 
   .brand-plate {
     min-height: 25rem;
+    padding: 4.5rem 0 3rem;
     border-top: 1px solid var(--line-dark);
     border-left: 0;
   }
@@ -556,7 +558,7 @@ footer {
   }
 
   h1 {
-    font-size: clamp(2.7rem, 17vw, 4.6rem);
+    font-size: clamp(2.5rem, 15vw, 4rem);
   }
 
   .brand-plate {

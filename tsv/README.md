@@ -8,9 +8,10 @@ The public overview lives at `/tsv/`. The operations application lives at
 Replaced the illustrated tour, repeated feature pitches, comparison table and
 embedded manual with a short project description, four feature summaries,
 development status and links to Operations and the existing controls reference.
-The user requested actual Blackbox captures. Image selection is pending access
-to the shared screenshots; do not promote this branch until those captures have
-been reviewed, added, captioned and checked at desktop and phone sizes.
+The operator approved publishing the simplified page now, with real Blackbox
+screenshots to follow. No generated scene or simulated headset image is used.
+When the captures are available, review, caption and check them at desktop and
+phone sizes before publishing the image update.
 
 Copy is grounded in the operator's TSV Master Plan discussion and these source
 snapshots in TheRobertTalley/TalleySoft-Vision:

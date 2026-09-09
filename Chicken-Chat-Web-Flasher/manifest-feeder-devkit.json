@@ -1,5 +1,5 @@
 {
-  "name": "Chicken Chat Cluck-o-Magic prototype shield",
+  "name": "Chicken Chat Feeder Bin Bot original DevKit",
   "version": "2026.09.09-mesh1",
   "new_install_prompt_erase": true,
   "new_install_improv_wait_time": 0,
@@ -8,24 +8,24 @@
       "chipFamily": "ESP32",
       "parts": [
         {
-          "path": "firmware/cluck-o-magic/bootloader.bin",
+          "path": "firmware/feeder-devkit/bootloader.bin",
           "offset": 4096,
           "sha256": "3d234a7471f67b013686dabd4dee7c1fa915c9928463616a94bc9297acf1abf8"
         },
         {
-          "path": "firmware/cluck-o-magic/partitions.bin",
+          "path": "firmware/feeder-devkit/partitions.bin",
           "offset": 32768,
           "sha256": "148b959cbff1c38aa8e1d5c0ba9d612c54997b945e56a63f41223eef650653a1"
         },
         {
-          "path": "firmware/cluck-o-magic/boot_app0.bin",
+          "path": "firmware/feeder-devkit/boot_app0.bin",
           "offset": 57344,
           "sha256": "f94c5d786a7a8fab06ac5d10e33bf37711a6697636dc037559ea19cc410a17f0"
         },
         {
-          "path": "firmware/cluck-o-magic/firmware.bin",
+          "path": "firmware/feeder-devkit/firmware.bin",
           "offset": 65536,
-          "sha256": "9b9db196eecee39c0f6f46ee4da18fdf2d60634c686a01b8d4ed4cf410a30b43"
+          "sha256": "ece238132d038c94961f797b643a8403c2404f4c9c835c4dea5d3cca6db9f831"
         }
       ]
     }

@@ -1,0 +1,190 @@
+{
+  "format": 1,
+  "chip": "esp32",
+  "release": "2026-09-09-mesh-1",
+  "radio_tested": true,
+  "field_tested": false,
+  "builds": {
+    "repeater": {
+      "environment": "repeater",
+      "hardware": "Standard ESP32 DevKit; optional configured ADC1 and contact inputs",
+      "parts": [
+        {
+          "file": "repeater/bootloader.bin",
+          "offset": 4096,
+          "size": 17536,
+          "sha256": "3d234a7471f67b013686dabd4dee7c1fa915c9928463616a94bc9297acf1abf8"
+        },
+        {
+          "file": "repeater/partitions.bin",
+          "offset": 32768,
+          "size": 3072,
+          "sha256": "148b959cbff1c38aa8e1d5c0ba9d612c54997b945e56a63f41223eef650653a1"
+        },
+        {
+          "file": "repeater/boot_app0.bin",
+          "offset": 57344,
+          "size": 8192,
+          "sha256": "f94c5d786a7a8fab06ac5d10e33bf37711a6697636dc037559ea19cc410a17f0"
+        },
+        {
+          "file": "repeater/firmware.bin",
+          "offset": 65536,
+          "size": 815360,
+          "sha256": "a37e440aa6cf83ec81170aa41101dcd16cd8ca6853902d00780ba92be9134824"
+        }
+      ]
+    },
+    "gateway": {
+      "environment": "gateway",
+      "hardware": "Standard ESP32 DevKit; Wi-Fi bridge, no output pins",
+      "parts": [
+        {
+          "file": "gateway/bootloader.bin",
+          "offset": 4096,
+          "size": 17536,
+          "sha256": "3d234a7471f67b013686dabd4dee7c1fa915c9928463616a94bc9297acf1abf8"
+        },
+        {
+          "file": "gateway/partitions.bin",
+          "offset": 32768,
+          "size": 3072,
+          "sha256": "148b959cbff1c38aa8e1d5c0ba9d612c54997b945e56a63f41223eef650653a1"
+        },
+        {
+          "file": "gateway/boot_app0.bin",
+          "offset": 57344,
+          "size": 8192,
+          "sha256": "f94c5d786a7a8fab06ac5d10e33bf37711a6697636dc037559ea19cc410a17f0"
+        },
+        {
+          "file": "gateway/firmware.bin",
+          "offset": 65536,
+          "size": 881440,
+          "sha256": "ac22364180ca9569e0b5aa22d5d5db2583cc9b4a25b4c67e2c34ff998ecac056"
+        }
+      ]
+    },
+    "bin-commander-devkit": {
+      "environment": "esp32dev-mesh",
+      "hardware": "Original esp32dev feeder pin map",
+      "parts": [
+        {
+          "file": "feeder-devkit/bootloader.bin",
+          "offset": 4096,
+          "size": 17536,
+          "sha256": "3d234a7471f67b013686dabd4dee7c1fa915c9928463616a94bc9297acf1abf8"
+        },
+        {
+          "file": "feeder-devkit/partitions.bin",
+          "offset": 32768,
+          "size": 3072,
+          "sha256": "148b959cbff1c38aa8e1d5c0ba9d612c54997b945e56a63f41223eef650653a1"
+        },
+        {
+          "file": "feeder-devkit/boot_app0.bin",
+          "offset": 57344,
+          "size": 8192,
+          "sha256": "f94c5d786a7a8fab06ac5d10e33bf37711a6697636dc037559ea19cc410a17f0"
+        },
+        {
+          "file": "feeder-devkit/firmware.bin",
+          "offset": 65536,
+          "size": 1245888,
+          "sha256": "ece238132d038c94961f797b643a8403c2404f4c9c835c4dea5d3cca6db9f831"
+        }
+      ]
+    },
+    "bin-commander-production": {
+      "environment": "fbb-production-pcb-mesh",
+      "hardware": "Production PCB pin map; hardware E-stop input",
+      "parts": [
+        {
+          "file": "feeder-production/bootloader.bin",
+          "offset": 4096,
+          "size": 17536,
+          "sha256": "3d234a7471f67b013686dabd4dee7c1fa915c9928463616a94bc9297acf1abf8"
+        },
+        {
+          "file": "feeder-production/partitions.bin",
+          "offset": 32768,
+          "size": 3072,
+          "sha256": "148b959cbff1c38aa8e1d5c0ba9d612c54997b945e56a63f41223eef650653a1"
+        },
+        {
+          "file": "feeder-production/boot_app0.bin",
+          "offset": 57344,
+          "size": 8192,
+          "sha256": "f94c5d786a7a8fab06ac5d10e33bf37711a6697636dc037559ea19cc410a17f0"
+        },
+        {
+          "file": "feeder-production/firmware.bin",
+          "offset": 65536,
+          "size": 1246992,
+          "sha256": "25c8e369c8c7759df6e46daa5339179daa6748fdd4e6cff4a53ec8e0b2c229ea"
+        }
+      ]
+    },
+    "bin-commander-prototype": {
+      "environment": "prototype-shield-mesh",
+      "hardware": "Prototype shield pin map; retains existing disabled hardware E-stop input",
+      "parts": [
+        {
+          "file": "feeder-bin-bot/bootloader.bin",
+          "offset": 4096,
+          "size": 17536,
+          "sha256": "3d234a7471f67b013686dabd4dee7c1fa915c9928463616a94bc9297acf1abf8"
+        },
+        {
+          "file": "feeder-bin-bot/partitions.bin",
+          "offset": 32768,
+          "size": 3072,
+          "sha256": "148b959cbff1c38aa8e1d5c0ba9d612c54997b945e56a63f41223eef650653a1"
+        },
+        {
+          "file": "feeder-bin-bot/boot_app0.bin",
+          "offset": 57344,
+          "size": 8192,
+          "sha256": "f94c5d786a7a8fab06ac5d10e33bf37711a6697636dc037559ea19cc410a17f0"
+        },
+        {
+          "file": "feeder-bin-bot/firmware.bin",
+          "offset": 65536,
+          "size": 1244576,
+          "sha256": "45545905cfc6082c26b4bfecdea2668d2010aae2e6d823a99d00bd3760512afc"
+        }
+      ]
+    },
+    "cluck-o-magic-prototype": {
+      "environment": "cluck-o-magic-mesh",
+      "hardware": "Cluck-o-Magic prototype shield pin map",
+      "parts": [
+        {
+          "file": "cluck-o-magic/bootloader.bin",
+          "offset": 4096,
+          "size": 17536,
+          "sha256": "3d234a7471f67b013686dabd4dee7c1fa915c9928463616a94bc9297acf1abf8"
+        },
+        {
+          "file": "cluck-o-magic/partitions.bin",
+          "offset": 32768,
+          "size": 3072,
+          "sha256": "148b959cbff1c38aa8e1d5c0ba9d612c54997b945e56a63f41223eef650653a1"
+        },
+        {
+          "file": "cluck-o-magic/boot_app0.bin",
+          "offset": 57344,
+          "size": 8192,
+          "sha256": "f94c5d786a7a8fab06ac5d10e33bf37711a6697636dc037559ea19cc410a17f0"
+        },
+        {
+          "file": "cluck-o-magic/firmware.bin",
+          "offset": 65536,
+          "size": 1244368,
+          "sha256": "9b9db196eecee39c0f6f46ee4da18fdf2d60634c686a01b8d4ed4cf410a30b43"
+        }
+      ]
+    }
+  },
+  "hardware_scope": "Two ESP32 boards: forwarded out-and-back radio probes, acknowledgments, reboot recovery, and production Wi-Fi collection. Physical multi-repeater chains and farm range remain untested."
+}

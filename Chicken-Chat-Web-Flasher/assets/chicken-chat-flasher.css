@@ -14,6 +14,28 @@
   font-family: "Arial Narrow", "Roboto Condensed", "Segoe UI", Arial, sans-serif;
 }
 
+[hidden] { display: none !important; }
+.profile-label { display: block; margin: 0 0 .4rem; font-weight: 700; }
+.flash-card select, .setup-grid input, .setup-grid select { width: 100%; min-height: 46px; border: 1px solid #777264; border-radius: 5px; padding: .7rem; background: #fffaf0; color: #171815; font: inherit; }
+.flash-card select { margin-bottom: 1rem; }
+.setup-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 1rem; margin: 1rem 0; }
+.setup-grid label { display: flex; flex-direction: column; gap: .5rem; font-weight: 700; }
+.setup-grid small, .setup-hint { font-size: .9rem; font-weight: 400; }
+.setup-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; margin: 1rem 0; }
+.procedure button, .file-button { display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: .75rem 1rem; border: 1px solid var(--ink); border-radius: 5px; background: var(--ink); color: var(--paper); font: inherit; font-weight: 700; cursor: pointer; }
+.procedure button:disabled { opacity: .45; cursor: default; }
+.file-button { position: relative; overflow: hidden; }
+.file-button input { position: absolute; inset: 0; opacity: 0; width: 100%; cursor: pointer; }
+.file-button:focus-within, .procedure button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--rust); outline-offset: 3px; }
+#board-id, #network-state { overflow-wrap: anywhere; }
+#setup-status { min-height: 1.5em; margin: 1rem 0 0; font-weight: 700; }
+#setup-status[data-error="true"] { color: #ffc1ae; }
+#usb-connect, #mesh-save { background: var(--feed); color: var(--ink); }
+.procedure a { color: var(--feed); text-underline-offset: .2em; }
+#sensor-settings { margin: 1rem 0; }
+#sensor-settings summary { padding: .7rem 0; cursor: pointer; font-weight: 700; }
+.network-intro { max-width: 75ch; }
+
 * {
   box-sizing: border-box;
 }

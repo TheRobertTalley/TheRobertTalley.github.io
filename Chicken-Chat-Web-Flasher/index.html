@@ -5,10 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#171815">
   <title>Chicken Chat Web Flasher</title>
-  <meta name="description" content="Install Chicken Chat firmware on Feeder Bin Bot and Cluck-o-Magic hardware from Chrome or Edge.">
+  <meta name="description" content="Install and set up Chicken Chat ESP32 repeaters, Wi-Fi gateways, Feeder Bin Bot, and Cluck-o-Magic.">
   <link rel="icon" type="image/png" href="assets/chicken-chat-logo.png?v=20260909">
-  <link rel="stylesheet" href="assets/chicken-chat-flasher.css?v=20260909">
+  <link rel="stylesheet" href="assets/chicken-chat-flasher.css?v=20260909mesh1">
   <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+  <script type="module" src="assets/mesh-setup.mjs?v=20260909mesh1"></script>
 </head>
 <body>
   <header class="site-header">
@@ -55,6 +56,18 @@
       </div>
 
       <div class="flash-grid">
+        <article class="flash-card">
+          <header class="card-header"><div><p class="hardware-family">Long-house network</p><h3>Repeater + sensors</h3></div><span class="board-tag">ESP32</span></header>
+          <p class="card-summary">Pass readings through other powered ESP32s. Add an analog sensor or dry contact on the same board.</p>
+          <dl class="specs"><div><dt>Board</dt><dd>ESP32 DevKit / 4 MB</dd></div><div><dt>Link</dt><dd>Encrypted ESP-NOW</dd></div><div><dt>Route</dt><dd>Automatic forwarding</dd></div></dl>
+          <div class="install-area"><esp-web-install-button manifest="manifest-repeater.json"></esp-web-install-button><p>After installation, use Network setup below.</p></div>
+        </article>
+        <article class="flash-card">
+          <header class="card-header"><div><p class="hardware-family">Long-house network</p><h3>Wi-Fi gateway</h3></div><span class="board-tag">ESP32</span></header>
+          <p class="card-summary">Place this board where farm Wi-Fi reaches. It collects mesh readings and holds them for the hub.</p>
+          <dl class="specs"><div><dt>Board</dt><dd>ESP32 DevKit / 4 MB</dd></div><div><dt>Wi-Fi</dt><dd>2.4 GHz, fixed channel</dd></div><div><dt>Storage</dt><dd>Buffered delivery</dd></div></dl>
+          <div class="install-area"><esp-web-install-button manifest="manifest-gateway.json"></esp-web-install-button><p>Set up the gateway first, then the repeaters.</p></div>
+        </article>
         <article class="flash-card feeder-card">
           <header class="card-header">
             <div>
@@ -63,14 +76,16 @@
             </div>
             <span class="board-tag">ESP32</span>
           </header>
-          <p class="card-summary">Firmware for the ACEBOTT ESP32 Max prototype shield.</p>
+          <p class="card-summary" id="feeder-description">ACEBOTT ESP32 Max prototype shield, with mesh telemetry and existing local controls.</p>
+          <label class="profile-label" for="feeder-profile">Board profile</label>
+          <select id="feeder-profile"><option value="manifest-feeder-bin-bot.json">Prototype shield</option><option value="manifest-feeder-production.json">Production PCB</option><option value="manifest-feeder-devkit.json">Original ESP32 DevKit pin map</option></select>
           <dl class="specs">
             <div><dt>Build</dt><dd>Feeder Bin Bot</dd></div>
             <div><dt>Flash</dt><dd>4 MB</dd></div>
             <div><dt>Mode</dt><dd>DIO / 40 MHz</dd></div>
           </dl>
           <div class="install-area">
-            <esp-web-install-button manifest="manifest-feeder-bin-bot.json"></esp-web-install-button>
+            <esp-web-install-button id="feeder-installer" manifest="manifest-feeder-bin-bot.json"></esp-web-install-button>
             <p>Connect the board only when the installer asks.</p>
           </div>
         </article>
@@ -83,7 +98,7 @@
             </div>
             <span class="board-tag">ESP32</span>
           </header>
-          <p class="card-summary">Firmware for the bin shaker prototype shield.</p>
+          <p class="card-summary">Bin shaker prototype shield, with mesh telemetry and existing local controls.</p>
           <dl class="specs">
             <div><dt>Build</dt><dd>Cluck-o-Magic</dd></div>
             <div><dt>Flash</dt><dd>4 MB</dd></div>
@@ -97,20 +112,52 @@
       </div>
     </section>
 
+    <section class="procedure" aria-labelledby="network-setup-title">
+      <div class="section-heading compact"><div><p class="section-number">02</p><h2 id="network-setup-title">Network setup</h2></div><p>Install first, close the installer, then connect here. Settings go directly to your board.</p></div>
+      <div class="network-intro"><p><strong>Start with the gateway.</strong> Create and keep one private network file. Load that same file when setting up every repeater or controller.</p><p>Use the same fixed 2.4 GHz channel on the farm router and all boards. Existing feeder and shaker boards use channel 6.</p></div>
+      <div class="setup-toolbar"><button type="button" id="usb-connect">Connect board</button><button type="button" id="usb-disconnect" disabled>Disconnect</button><span id="board-id">No board connected</span></div>
+      <form id="mesh-form">
+        <div class="setup-grid">
+          <label>Firmware role<select id="mesh-role"><option value="gateway">Wi-Fi gateway</option><option value="repeater">Repeater + sensors</option><option value="controller">Feeder / shaker</option><option value="leaf">Sensor only</option></select></label>
+          <label>Radio channel<select id="mesh-channel"><option>1</option><option selected>6</option><option>11</option><option>2</option><option>3</option><option>4</option><option>5</option><option>7</option><option>8</option><option>9</option><option>10</option></select></label>
+        </div>
+        <div class="setup-toolbar"><button type="button" id="network-create">Create network file</button><label class="file-button">Load network file<input id="network-file" type="file" accept="application/json,.json"></label><span id="network-state">No network loaded</span></div>
+        <p class="setup-hint">The network file contains private keys. Keep it with your farm records. It stays on your computer and is never uploaded to this website.</p>
+        <div class="setup-grid">
+          <label>Board name<input id="mesh-name" maxlength="24" required autocomplete="off" placeholder="North end repeater"></label>
+          <label>House<input id="mesh-house" maxlength="24" required autocomplete="off" placeholder="house-01"></label>
+          <label>Zone<input id="mesh-zone" maxlength="24" required autocomplete="off" placeholder="north-end"></label>
+        </div>
+        <div class="setup-grid" id="gateway-settings"><label>Farm Wi-Fi name<input id="mesh-ssid" maxlength="32" autocomplete="off"></label><label>Wi-Fi password<input id="mesh-password" type="password" maxlength="63" autocomplete="new-password"><small>Leave empty for an open network.</small></label></div>
+        <details id="sensor-settings" hidden><summary>Optional sensor inputs</summary><p>Use conditioned 0–3.3 V analog inputs or a dry contact to ground.</p><div class="setup-grid">
+          <label>Analog input<select id="mesh-analog"><option value="-1">None</option><option>32</option><option>33</option><option>34</option><option>35</option><option>36</option><option>39</option></select></label>
+          <label>Contact input<select id="mesh-contact"><option value="-1">None</option><option>18</option><option>19</option><option>21</option><option>22</option><option>23</option><option>25</option><option>26</option><option>27</option><option>32</option><option>33</option></select></label>
+        </div></details>
+        <button type="submit" id="mesh-save">Save to board</button>
+      </form>
+      <p id="setup-status" role="status" aria-live="polite">Connect an installed board to begin.</p>
+    </section>
+
+    <section class="procedure" aria-labelledby="release-notes-title"><div class="section-heading compact"><div><p class="section-number">03</p><h2 id="release-notes-title">Mesh release · September 9, 2026</h2></div></div>
+      <p>Two ESP32 boards passed radio forwarding, return acknowledgments, Wi-Fi collection, and recovery tests. Eight-hop routing also passes software tests. Actual chicken-house range and repeater spacing still need field testing.</p>
+      <p>Repeaters carry readings and alarms. Equipment control stays local. This firmware does not extend phone or camera internet access.</p>
+      <p><a href="downloads/chicken-chat-mesh-2026-09-09.zip">Download all firmware, the hub collector, and setup notes</a> · <a href="hardware-validation.md">Read the hardware test results</a></p>
+    </section>
+
     <section class="procedure" aria-labelledby="flash-procedure">
       <div class="section-heading compact">
         <div>
-          <p class="section-number">02</p>
+          <p class="section-number">04</p>
           <h2 id="flash-procedure">Flash procedure</h2>
         </div>
         <p>Three steps. Keep the USB cable connected until the install is complete.</p>
       </div>
       <ol class="steps">
-        <li><span>1</span><div><strong>Pick the controller</strong><p>Select Install on the matching card above.</p></div></li>
+        <li><span>1</span><div><strong>Pick the controller</strong><p>Select Connect on the matching card, then Install.</p></div></li>
         <li><span>2</span><div><strong>Choose the serial port</strong><p>Allow browser access to the connected ESP32.</p></div></li>
         <li><span>3</span><div><strong>Let it finish</strong><p>Do not unplug or close the page during the flash.</p></div></li>
       </ol>
-      <p class="erase-note"><strong>Fresh install:</strong> Flashing replaces the firmware and may erase settings stored on the controller.</p>
+      <p class="erase-note"><strong>Keep existing settings:</strong> Leave the erase option unchecked when updating the same board profile. Erasing clears saved controller and network settings.</p>
     </section>
   </main>
 

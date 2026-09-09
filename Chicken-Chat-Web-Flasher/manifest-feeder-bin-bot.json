@@ -1,15 +1,32 @@
 {
-  "name": "Chicken Chat Feeder Bin Bot",
-  "version": "2026.07.31",
-  "new_install_skip_erase": false,
+  "name": "Chicken Chat Feeder Bin Bot prototype shield",
+  "version": "2026.09.09-mesh1",
+  "new_install_prompt_erase": true,
+  "new_install_improv_wait_time": 0,
   "builds": [
     {
       "chipFamily": "ESP32",
       "parts": [
-        { "path": "firmware/feeder-bin-bot/bootloader.bin", "offset": 4096 },
-        { "path": "firmware/feeder-bin-bot/partitions.bin", "offset": 32768 },
-        { "path": "firmware/feeder-bin-bot/boot_app0.bin", "offset": 57344 },
-        { "path": "firmware/feeder-bin-bot/firmware.bin", "offset": 65536 }
+        {
+          "path": "firmware/feeder-bin-bot/bootloader.bin",
+          "offset": 4096,
+          "sha256": "3d234a7471f67b013686dabd4dee7c1fa915c9928463616a94bc9297acf1abf8"
+        },
+        {
+          "path": "firmware/feeder-bin-bot/partitions.bin",
+          "offset": 32768,
+          "sha256": "148b959cbff1c38aa8e1d5c0ba9d612c54997b945e56a63f41223eef650653a1"
+        },
+        {
+          "path": "firmware/feeder-bin-bot/boot_app0.bin",
+          "offset": 57344,
+          "sha256": "f94c5d786a7a8fab06ac5d10e33bf37711a6697636dc037559ea19cc410a17f0"
+        },
+        {
+          "path": "firmware/feeder-bin-bot/firmware.bin",
+          "offset": 65536,
+          "sha256": "45545905cfc6082c26b4bfecdea2668d2010aae2e6d823a99d00bd3760512afc"
+        }
       ]
     }
   ]

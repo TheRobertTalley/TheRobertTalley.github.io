@@ -1,0 +1,61 @@
+{
+  "note": "Original TSV captures retained without pixel edits. Browser layout corrects the recorded left display rotation by 20 degrees and frames the forward scene or menu. No scene, HUD, text or detail has been synthesized. These are 2D views, not a reproduction of binocular depth or the full optical field.",
+  "files": [
+    {
+      "publishedFile": "quest-night-vision.jpg",
+      "sourceFile": "final-screen-view.jpg",
+      "sha256": "ff8f9100f763c40d3b0c2db3c0416394c70e3e89ac79a4b25b6a93da9c27df65"
+    },
+    {
+      "publishedFile": "quest-night-vision-full.png",
+      "sourceFile": "final-screen.png",
+      "sha256": "12522ea9fb598475500c8862a757b84b340af05d9df2cd8ae8dc6b832e4bb145"
+    },
+    {
+      "publishedFile": "nv-registration.png",
+      "sourceFile": "verified-comparison.png",
+      "sha256": "b473b7830f598fcd5c15633f05a9811c48bd12351babca06633c213d0fc6458c"
+    },
+    {
+      "publishedFile": "camera-settings.png",
+      "sourceFile": "qa-headset-menu-ir-night-installed-final.png",
+      "sha256": "ee99acd08004d635498f4b12ad81e05df8160b45f2a56b7c344e0a53fe8e9bb6"
+    },
+    {
+      "publishedFile": "mesh-controls.png",
+      "sourceFile": "qa-headset-menu-devices-installed-final.png",
+      "sha256": "c9444e528abec3dc4ead87cefe6131947bd81ac51c4c769fddf510efe71d4988"
+    },
+    {
+      "publishedFile": "thermal-and-nv-mirror.png",
+      "sourceFile": "tsv-thermal-overlay-nv-mirror-video-proof.png",
+      "sha256": "8695e00ac5280d730252780c815e25e0c2d35b2126e43cc49ff7a59b50e5acbe"
+    }
+  ],
+  "presentation": {
+    "rotationDegrees": 20,
+    "eye": "left",
+    "nightVisionViewport": [
+      45,
+      55,
+      660,
+      520
+    ],
+    "thermalViewport": [
+      80,
+      25,
+      550,
+      500
+    ],
+    "menuViewport": [
+      220,
+      390,
+      400,
+      270
+    ],
+    "coordinateSpace": [
+      1440,
+      770
+    ]
+  }
+}

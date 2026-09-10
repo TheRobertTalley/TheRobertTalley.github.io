@@ -7,8 +7,8 @@
     <meta name="description" content="BlackBox Meshtastic message, node, telemetry, and Ollama operator console" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://blackbox.tailade622.ts.net:8443 http://127.0.0.1:8790; img-src 'self' data: https://tile.openstreetmap.org; style-src 'self' 'unsafe-inline'; font-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'" />
     <title>BlackBox Mesh Comms</title>
-    <script type="module" crossorigin src="./assets/index-mwHwOqPN.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-BtWEjdFw.css">
+    <script type="module" crossorigin src="./assets/index-B1kYNZaA.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-B112Dqtl.css">
   </head>
   <body>
     <div id="app">
@@ -29,6 +29,20 @@
 
       <main class="workspace">
         <section id="map" aria-label="Meshtastic node map"></section>
+
+        <section class="map-toolbar" aria-label="Map controls">
+          <div class="map-styles" role="group" aria-label="Map appearance">
+            <button type="button" id="map-street" aria-pressed="true">Street</button>
+            <button type="button" id="map-night" aria-pressed="false">Night</button>
+          </div>
+          <button type="button" id="map-names" aria-pressed="true">Names</button>
+          <button type="button" id="map-expand" aria-expanded="false" aria-controls="map">Expand map</button>
+        </section>
+        <div class="map-legend" aria-label="Node marker legend">
+          <span><i class="legend-local" aria-hidden="true"></i>BlackBox</span>
+          <span><i class="legend-active" aria-hidden="true"></i>Active</span>
+          <span><i class="legend-previous" aria-hidden="true"></i>Last known</span>
+        </div>
 
         <aside class="telemetry-panel glass" aria-label="BlackBox mesh telemetry">
           <p class="eyebrow">RADIO / COM4</p>
@@ -63,7 +77,7 @@
           <div class="actions">
             <button id="compose-button" class="primary-action" type="button"><span aria-hidden="true">＋</span><b id="compose-label">CONNECT &amp; SEND</b></button>
             <button id="radio-action-button" type="button" disabled><span>⌁</span> RADIO ACTION</button>
-            <button id="recenter-button" type="button"><span>⌖</span> RECENTER</button>
+            <button id="recenter-button" type="button" aria-label="Recenter map on all nodes"><span aria-hidden="true">⌖</span> RECENTER</button>
           </div>
         </section>
       </main>

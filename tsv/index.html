@@ -13,9 +13,7 @@
   <title>TSV | Robert Talley</title>
   <link rel="icon" type="image/svg+xml" href="./mark.svg?v=20260909-tsv">
   <link rel="stylesheet" href="../TalleySoft-Vision/assets/talleysoft-site.css?v=20260906-live-operations">
-  <link rel="stylesheet" href="./style.css?v=20260909-headset-view-20260909">
-  <link rel="stylesheet" href="./captures.css?v=headset-view-20260909">
-  <script src="./tour.js?v=headset-view-20260909" defer></script>
+  <link rel="stylesheet" href="./style.css?v=20260909-operator-copy">
 </head>
 <body class="tsv-overview">
   <a class="skip" href="#main">Skip to content</a>
@@ -31,16 +29,6 @@
       <p class="intro-note">TSV adds those views to Quest 3 passthrough. Using external cameras and tracked hand controls for controllerless use.</p>
     </section>
 
-    <section id="captures" aria-label="TSV headset view">
-<figure class="capture-hero">
-        <a class="image-link headset-view pov-night" href="./captures/night-vision.html" data-viewer data-image="./images/quest-night-vision-full.png" data-frame="headset-view pov-night" data-caption="Night vision over Quest passthrough. Headset view, v0.11.203, 8 September 2026 UTC." aria-label="Enlarge the night-vision headset capture">
-          <img class="capture-source" src="./images/quest-night-vision-full.png" width="4128" height="2208" alt="The forward Quest view, with display rotation corrected. A bright grayscale night-vision rectangle sits over the darker color passthrough, with a green circular map, clock and battery display." fetchpriority="high">
-          <span class="enlarge" aria-hidden="true">Enlarge capture ↗</span>
-        </a>
-        <figcaption><span class="capture-number">NIGHT VISION / QUEST 3</span><div><strong>External night vision over color passthrough.</strong><p>The bright rectangle comes from the USB night-vision camera. The color view around it is Quest passthrough. The green map and heading are drawn by TSV.</p></div><span class="capture-date">v0.11.203<br> 08 SEP 2026 · UTC</span></figcaption>
-      </figure>
-    </section>
-
     <section class="panel features" id="capabilities" aria-labelledby="features-title">
       <h2 id="features-title">What it does</h2>
       <dl class="feature-list">
@@ -51,35 +39,6 @@
         <div><dt>Hand controls</dt><dd>Controls use the non-dominant or non-weapon hand only. Hold a pinch and rotate your wrist to change a view. Triple-tap the opposite wrist to open Settings. Adjust cameras and save the setup without controllers.</dd></div>
       </dl>
     </section>
-
-    <section class="panel capture-gallery" aria-labelledby="capture-gallery-title">
-      <h2 id="capture-gallery-title">Inside the headset</h2>
-      <div class="capture-grid"><figure class="capture-card">
-          <a class="image-link headset-view pov-thermal" href="./captures/thermal-mirror.html" data-viewer data-image="./images/thermal-and-nv-mirror.png" data-frame="headset-view pov-thermal" data-caption="Thermal overlay and NV sensor mirror. Headset view." aria-label="Enlarge the thermal and night-vision mirror capture">
-            <img class="capture-source" src="./images/thermal-and-nv-mirror.png" width="4128" height="2208" loading="lazy" decoding="async" alt="The upright TSV view showing a narrow grayscale night-vision mirror above the green map and a separate darker thermal image below.">
-            <span class="enlarge" aria-hidden="true">View capture ↗</span>
-          </a>
-          <figcaption><span class="capture-number">THERMAL + NV MIRROR</span><p>The narrow upper mirror shows night vision. The thermal camera occupies the lower forward view; the map stays visible alongside both.</p></figcaption>
-        </figure><figure>
-            <a class="image-link headset-view pov-menu" href="./captures/camera-settings.html" data-viewer data-image="./images/camera-settings.png" data-frame="headset-view pov-menu" data-caption="Camera settings. Headset menu from the August 2026 Quest capture. Current controls are listed in the guide." aria-label="Enlarge the camera-settings capture"><img class="capture-source" src="./images/camera-settings.png" width="4128" height="2208" loading="lazy" decoding="async" alt="Actual green Quest camera-settings panel with view mode, image fit, head alignment, move X/Y, FOV, tilt, roll, brightness and gain controls."><span class="enlarge" aria-hidden="true">Enlarge capture ↗</span></a>
-            <figcaption><span class="capture-number">CAMERA SETTINGS</span><p>Menu view from an August control capture. Current source controls are separated into camera, alignment and thermal-image pages.</p></figcaption>
-          </figure>
-          <figure>
-            <a class="image-link headset-view pov-menu" href="./captures/mesh-controls.html" data-viewer data-image="./images/mesh-controls.png" data-frame="headset-view pov-menu" data-caption="Mesh / Devices. Headset menu from the August 2026 Quest capture." aria-label="Enlarge the Mesh and Devices capture"><img class="capture-source" src="./images/mesh-controls.png" width="4128" height="2208" loading="lazy" decoding="async" alt="Actual green Quest Mesh and Devices panel with Mesh Connect, Send Check-in, Read Channels, favorite-node and map controls."><span class="enlarge" aria-hidden="true">Enlarge capture ↗</span></a>
-            <figcaption><span class="capture-number">MESH / DEVICES</span><p>Menu view from the same control capture. Radio connection, check-in, channel and favorite-node actions are operated inside the headset.</p></figcaption>
-          </figure></div>
-      <p class="capture-note">Recorded Quest views, with display rotation corrected for this page. The menu captures are from August; the controls reference covers the current build.</p>
-    </section>
-    <details class="panel capture-results" id="registration">
-      <summary>Camera alignment: 23.14 px to 3.09 px <span aria-hidden="true">+</span></summary>
-      <div class="capture-results-body"><div><p>TSV saves the camera’s position, perspective, lens and timing correction. In the September 8 NV check, median registration error fell from <strong>23.14 to 3.09 native NV pixels</strong>, with <strong>908 matched features</strong>.</p><p>The same recorded run delivered <strong>56.97 median NV FPS</strong> and <strong>72.12 app FPS</strong>, with live NV in all 60 samples.</p><p class="capture-note">Quest 3, v0.11.203. Results describe this room and configuration. Moving-head alignment in both eyes and wearer comfort still need separate on-head validation. <a href="./measurements.json">Recorded results</a></p></div><figure class="calibration-capture">
-            <a class="image-link" href="./captures/registration.html" data-viewer data-image="./images/nv-registration.png" data-frame="reference" data-caption="RGB/NV registration comparison, 8 September 2026 UTC. Calibration composite." aria-label="Enlarge the RGB and night-vision registration comparison">
-              <img src="./images/nv-registration.png" width="640" height="480" loading="lazy" decoding="async" alt="Grayscale room reference with the corrected NV image tinted green, allowing the doorframes, chair and furniture edges to be compared.">
-              <span class="enlarge" aria-hidden="true">Inspect comparison ↗</span>
-            </a>
-            <figcaption><span class="capture-number">RGB + NV COMPARISON</span><p>The tinted area is the registered NV image against the RGB reference. Look at the doorframes and furniture edges.</p></figcaption>
-          </figure></div>
-    </details>
 
     <section class="panel progress" aria-labelledby="progress-title">
       <h2 id="progress-title">Still being worked on</h2>
@@ -93,6 +52,5 @@
     </section>
   </main>
   <footer class="wrap"><span>Robert Talley</span><a href="#main">Back to top ↑</a></footer>
-<dialog id="capture-viewer" aria-labelledby="viewer-caption"><div class="viewer-toolbar"><span>QUEST / TSV CAPTURE</span><button type="button" id="viewer-close" aria-label="Close image viewer">Close <span aria-hidden="true">×</span></button></div><div class="viewer-image" id="viewer-frame"><img class="capture-source" id="viewer-image" alt=""></div><div class="viewer-caption"><p id="viewer-caption"></p><a id="viewer-original" href="./captures/night-vision.html" target="_blank" rel="noopener">Open image ↗</a></div></dialog>
 </body>
 </html>

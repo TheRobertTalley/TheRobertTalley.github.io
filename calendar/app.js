@@ -385,7 +385,9 @@
   }
 
   function reloadPage() {
-    window.location.reload();
+    var url = new URL(window.location.href);
+    url.searchParams.set("t", Date.now());
+    window.location.replace(url.toString());
   }
 
   function schedulePageReload() {

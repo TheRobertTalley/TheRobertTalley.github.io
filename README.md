@@ -19,7 +19,7 @@ The smart calendar display is a static webpage built for a TV or Fire Stick brow
 4. Hide the Silk navigation bar from the Silk toolbar if it is visible.
 5. Keep the Fire TV sleep timer and screensaver disabled for this display device.
 
-The page refreshes weather and calendar data automatically. It also reloads itself every hour so the browser does not need a manual refresh.
+The page refreshes weather and calendar data automatically. It reloads once a day at 05:00 America/New_York so the browser does not need a manual refresh.
 
 ## Make Your Own Copy
 

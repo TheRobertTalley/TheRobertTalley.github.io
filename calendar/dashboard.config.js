@@ -16,7 +16,7 @@ window.TalleyDashboardConfig = {
   pageReloadMinute: 0,
   calendar: {
     title: "HCSO Training Center",
-    dataUrl: "./calendar-events.json",
+    dataUrl: "./calendar-events.json?calendar=fire-tv",
     maxEvents: 6,
     visibleWeeks: 3
   },

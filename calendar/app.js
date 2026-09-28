@@ -184,7 +184,7 @@
   function renderCalendar(events) {
     var calendar = config.calendar || {};
     var now = new Date();
-    var visibleWeeks = calendar.visibleWeeks || 5;
+    var visibleWeeks = Math.max(Number(calendar.visibleWeeks) || 5, 3);
     var rangeStart = startOfWorkWeek(now);
     var rangeEnd = addDays(rangeStart, visibleWeeks * 7 - 3);
     rangeEnd.setHours(23, 59, 59, 999);

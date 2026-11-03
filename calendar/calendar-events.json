@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-02T19:59:55.088Z",
+  "updatedAt": "2026-11-03T17:36:00.281Z",
   "events": [
     {
       "title": "Patrol Rifle (Classroom 1, Range 1)",
@@ -72,6 +72,13 @@
       "location": "Hall County Range"
     },
     {
+      "title": "FBI Firearms (Range 3)",
+      "start": "2026-11-06T00:00:00",
+      "end": "2026-11-07T00:00:00",
+      "allDay": true,
+      "location": ""
+    },
+    {
       "title": "Open Mat",
       "start": "2026-11-06T00:00:00",
       "end": "2026-11-07T00:00:00",
@@ -80,13 +87,6 @@
     },
     {
       "title": "Open Range",
-      "start": "2026-11-06T00:00:00",
-      "end": "2026-11-07T00:00:00",
-      "allDay": true,
-      "location": ""
-    },
-    {
-      "title": "FBI Firearms (Range 3)",
       "start": "2026-11-06T00:00:00",
       "end": "2026-11-07T00:00:00",
       "allDay": true,
@@ -233,6 +233,13 @@
       "location": "Hall County Range"
     },
     {
+      "title": "Sandy Springs (Range 2/ Sniper)",
+      "start": "2026-11-18T00:00:00",
+      "end": "2026-11-19T00:00:00",
+      "allDay": true,
+      "location": ""
+    },
+    {
       "title": "Taser 10 Transition",
       "start": "2026-11-18T00:00:00",
       "end": "2026-11-19T00:00:00",
@@ -247,21 +254,14 @@
       "location": ""
     },
     {
-      "title": "Sandy Springs (Range 2/ Sniper)",
-      "start": "2026-11-18T00:00:00",
-      "end": "2026-11-19T00:00:00",
-      "allDay": true,
-      "location": ""
-    },
-    {
-      "title": "FBI SWAT Firearms (Range 3 and 270)",
+      "title": "Taser 10 Transition",
       "start": "2026-11-19T00:00:00",
       "end": "2026-11-20T00:00:00",
       "allDay": true,
       "location": ""
     },
     {
-      "title": "Taser 10 Transition",
+      "title": "FBI SWAT Firearms (Range 3 and 270)",
       "start": "2026-11-19T00:00:00",
       "end": "2026-11-20T00:00:00",
       "allDay": true,
@@ -758,18 +758,18 @@
       "location": "Hall County Range"
     },
     {
-      "title": "SWAT Training (Range 2/270) 8hr",
-      "start": "2027-01-05T00:00:00",
-      "end": "2027-01-06T00:00:00",
-      "allDay": true,
-      "location": ""
-    },
-    {
       "title": "FBI Firearms Instructor Course (Range 3) & classroom 2",
       "start": "2027-01-05T00:00:00",
       "end": "2027-01-06T00:00:00",
       "allDay": true,
       "location": "Hall County Range"
+    },
+    {
+      "title": "SWAT Training (Range 2/270) 8hr",
+      "start": "2027-01-05T00:00:00",
+      "end": "2027-01-06T00:00:00",
+      "allDay": true,
+      "location": ""
     },
     {
       "title": "FBI Firearms Instructor Course (Range 3)",

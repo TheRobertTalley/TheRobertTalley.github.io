@@ -1,6 +1,6 @@
 {
   "name": "Chicken Chat Cluck-o-Magic prototype shield",
-  "version": "2026.09.09-mesh1",
+  "version": "2026.11.15-web16",
   "new_install_prompt_erase": true,
   "new_install_improv_wait_time": 0,
   "builds": [
@@ -25,7 +25,7 @@
         {
           "path": "firmware/cluck-o-magic/firmware.bin",
           "offset": 65536,
-          "sha256": "9b9db196eecee39c0f6f46ee4da18fdf2d60634c686a01b8d4ed4cf410a30b43"
+          "sha256": "5e599a5405c13bcf97fa587f29a215ab8b44c6e4f880ed0b687eae7f2050fadf"
         }
       ]
     }

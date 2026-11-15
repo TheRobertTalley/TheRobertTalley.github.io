@@ -1,6 +1,6 @@
 {
   "name": "Chicken Chat Feeder Bin Bot prototype shield",
-  "version": "2026.09.09-mesh1",
+  "version": "2026.11.15-web16",
   "new_install_prompt_erase": true,
   "new_install_improv_wait_time": 0,
   "builds": [
@@ -25,7 +25,7 @@
         {
           "path": "firmware/feeder-bin-bot/firmware.bin",
           "offset": 65536,
-          "sha256": "45545905cfc6082c26b4bfecdea2668d2010aae2e6d823a99d00bd3760512afc"
+          "sha256": "d18dd837f980793a9a0b7316031c7af390e33af88327f7b4628f66017fea03f1"
         }
       ]
     }

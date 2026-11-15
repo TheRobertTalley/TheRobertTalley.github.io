@@ -1,7 +1,7 @@
 {
   "format": 1,
   "chip": "esp32",
-  "release": "2026-09-09-mesh-1",
+  "release": "2026-11-15-web-16",
   "radio_tested": true,
   "field_tested": false,
   "builds": {
@@ -151,7 +151,7 @@
           "file": "feeder-bin-bot/firmware.bin",
           "offset": 65536,
           "size": 1244576,
-          "sha256": "45545905cfc6082c26b4bfecdea2668d2010aae2e6d823a99d00bd3760512afc"
+          "sha256": "d18dd837f980793a9a0b7316031c7af390e33af88327f7b4628f66017fea03f1"
         }
       ]
     },
@@ -181,7 +181,7 @@
           "file": "cluck-o-magic/firmware.bin",
           "offset": 65536,
           "size": 1244368,
-          "sha256": "9b9db196eecee39c0f6f46ee4da18fdf2d60634c686a01b8d4ed4cf410a30b43"
+          "sha256": "5e599a5405c13bcf97fa587f29a215ab8b44c6e4f880ed0b687eae7f2050fadf"
         }
       ]
     }
